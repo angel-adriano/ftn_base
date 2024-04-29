@@ -19,12 +19,11 @@ class ContractLine(models.Model):
     _inherit = [
         "contract.abstract.contract.line",
         "contract.recurrency.mixin",
+        "analytic.mixin",
     ]
     _order = "sequence,id"
 
-    sequence = fields.Integer(
-        string="Sequence",
-    )
+    sequence = fields.Integer()
     contract_id = fields.Many2one(
         comodel_name="contract.contract",
         string="Contract",
@@ -33,18 +32,10 @@ class ContractLine(models.Model):
         auto_join=True,
         ondelete="cascade",
     )
-    analytic_account_id = fields.Many2one(
-        string="Analytic account",
-        comodel_name="account.analytic.account",
-    )
-    analytic_tag_ids = fields.Many2many(
-        comodel_name="account.analytic.tag",
-        string="Analytic Tags",
-    )
+    currency_id = fields.Many2one(related="contract_id.currency_id")
     date_start = fields.Date(required=True)
     date_end = fields.Date(compute="_compute_date_end", store=True, readonly=False)
     termination_notice_date = fields.Date(
-        string="Termination notice date",
         compute="_compute_termination_notice_date",
         store=True,
         copy=False,
@@ -72,7 +63,6 @@ class ContractLine(models.Model):
         help="Contract Line origin of this one.",
     )
     manual_renew_needed = fields.Boolean(
-        string="Manual renew needed",
         default=False,
         help="This flag is used to make a difference between a definitive stop"
         "and temporary one for which a user is not able to plan a"
@@ -92,7 +82,6 @@ class ContractLine(models.Model):
         string="Un-Cancel allowed?", compute="_compute_allowed"
     )
     state = fields.Selection(
-        string="State",
         selection=[
             ("upcoming", "Upcoming"),
             ("in-progress", "In-progress"),
@@ -109,16 +98,16 @@ class ContractLine(models.Model):
         related="contract_id.active",
         store=True,
         readonly=True,
-        default=True,
     )
-
-    def _compute_display_name(self):
-        for rec in self:
-            rec.display_name = "%s - %s" % (rec.date_start, rec.name)
 
     @api.depends(
-        "last_date_invoiced", "date_start", "date_end", "contract_id.last_date_invoiced"
+        "last_date_invoiced",
+        "date_start",
+        "date_end",
+        "contract_id.last_date_invoiced",
+        "contract_id.contract_line_ids.last_date_invoiced",
     )
+    # pylint: disable=missing-return
     def _compute_next_period_date_start(self):
         """Rectify next period date start if another line in the contract has been
         already invoiced previously when the recurrence is by contract.
@@ -156,7 +145,15 @@ class ContractLine(models.Model):
             else:
                 rec.termination_notice_date = False
 
-    @api.depends("is_canceled", "date_start", "date_end", "is_auto_renew")
+    @api.depends(
+        "is_canceled",
+        "date_start",
+        "date_end",
+        "is_auto_renew",
+        "manual_renew_needed",
+        "termination_notice_date",
+        "successor_contract_line_id",
+    )
     def _compute_state(self):
         today = fields.Date.context_today(self)
         for rec in self:
@@ -204,15 +201,11 @@ class ContractLine(models.Model):
         if state == "upcoming":
             return [
                 "&",
-                ("display_type", "=", False),
-                "&",
                 ("date_start", ">", today),
                 ("is_canceled", "=", False),
             ]
         if state == "in-progress":
             return [
-                "&",
-                ("display_type", "=", False),
                 "&",
                 "&",
                 "&",
@@ -225,14 +218,10 @@ class ContractLine(models.Model):
                 ("is_auto_renew", "=", True),
                 "&",
                 ("is_auto_renew", "=", False),
-                "|",
-                ("termination_notice_date", "=", False),
                 ("termination_notice_date", ">", today),
             ]
         if state == "to-renew":
             return [
-                "&",
-                ("display_type", "=", False),
                 "&",
                 "&",
                 ("is_canceled", "=", False),
@@ -245,8 +234,6 @@ class ContractLine(models.Model):
             ]
         if state == "upcoming-close":
             return [
-                "&",
-                ("display_type", "=", False),
                 "&",
                 "&",
                 "&",
@@ -262,8 +249,6 @@ class ContractLine(models.Model):
         if state == "closed":
             return [
                 "&",
-                ("display_type", "=", False),
-                "&",
                 "&",
                 "&",
                 ("is_canceled", "=", False),
@@ -276,7 +261,7 @@ class ContractLine(models.Model):
                 ("manual_renew_needed", "=", False),
             ]
         if state == "canceled":
-            return ["&", ("display_type", "=", False), ("is_canceled", "=", True)]
+            return [("is_canceled", "=", True)]
         if not state:
             return [("display_type", "!=", False)]
 
@@ -564,33 +549,24 @@ class ContractLine(models.Model):
             else:
                 rec.create_invoice_visibility = False
 
-    def _prepare_invoice_line(self, move_form):
+    def _prepare_invoice_line(self):
         self.ensure_one()
         dates = self._get_period_to_invoice(
             self.last_date_invoiced, self.recurring_next_date
         )
-        line_form = move_form.invoice_line_ids.new()
-        line_form.display_type = self.display_type
-        line_form.product_id = self.product_id
-        invoice_line_vals = line_form._values_to_save(all_fields=True)
         name = self._insert_markers(dates[0], dates[1])
-        invoice_line_vals.update(
-            {
-                "account_id": invoice_line_vals["account_id"]
-                if "account_id" in invoice_line_vals and not self.display_type
-                else False,
-                "quantity": self._get_quantity_to_invoice(*dates),
-                "product_uom_id": self.uom_id.id,
-                "discount": self.discount,
-                "contract_line_id": self.id,
-                "sequence": self.sequence,
-                "name": name,
-                "analytic_account_id": self.analytic_account_id.id,
-                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
-                "price_unit": self.price_unit,
-            }
-        )
-        return invoice_line_vals
+        return {
+            "quantity": self._get_quantity_to_invoice(*dates),
+            "product_uom_id": self.uom_id.id,
+            "discount": self.discount,
+            "contract_line_id": self.id,
+            "analytic_distribution": self.analytic_distribution,
+            "sequence": self.sequence,
+            "name": name,
+            "price_unit": self.price_unit,
+            "display_type": self.display_type or "product",
+            "product_id": self.product_id.id,
+        }
 
     def _get_period_to_invoice(
         self, last_date_invoiced, recurring_next_date, stop_at_date_end=True
@@ -675,11 +651,15 @@ class ContractLine(models.Model):
             "date_end": date_end,
             "is_auto_renew": False,
             "manual_renew_needed": manual_renew_needed,
+            "recurring_next_date": self.get_next_invoice_date(
+                self.next_period_date_start,
+                self.recurring_invoicing_type,
+                self.recurring_invoicing_offset,
+                self.recurring_rule_type,
+                self.recurring_interval,
+                max_date_end=date_end,
+            ),
         }
-
-    def _prepare_value_for_contract_stop(self, date_end):
-        self.ensure_one()
-        return {"date_end": date_end}
 
     def stop(self, date_end, manual_renew_needed=False, post_message=True):
         """
@@ -699,25 +679,19 @@ class ContractLine(models.Model):
                     rec.write(
                         rec._prepare_value_for_stop(date_end, manual_renew_needed)
                     )
-                    if not rec.contract_id.line_recurrence:
-                        # FIXME: This should not happen. As recurring_next_date
-                        # is computed on contract from lines ones, the only
-                        # write({"date_end"}) on lines should be sufficent
-                        # The set_recurrence_field() on date_end should be
-                        # suppressed.
-                        rec.contract_id.write(
-                            rec._prepare_value_for_contract_stop(date_end)
-                        )
                     if post_message:
-                        msg = _(
-                            """Contract line for <strong>{product}</strong>
+                        msg = (
+                            _(
+                                """Contract line for <strong>%(product)s</strong>
                             stopped: <br/>
-                            - <strong>End</strong>: {old_end} -- {new_end}
-                            """.format(
-                                product=rec.name,
-                                old_end=old_date_end,
-                                new_end=rec.date_end,
+                            - <strong>End</strong>: %(old_end)s -- %(new_end)s
+                            """
                             )
+                            % {
+                                "product": rec.name,
+                                "old_end": old_date_end,
+                                "new_end": rec.date_end,
+                            }
                         )
                         rec.contract_id.message_post(body=msg)
                 else:
@@ -783,17 +757,20 @@ class ContractLine(models.Model):
             rec.successor_contract_line_id = new_line
             contract_line |= new_line
             if post_message:
-                msg = _(
-                    """Contract line for <strong>{product}</strong>
+                msg = (
+                    _(
+                        """Contract line for <strong>%(product)s</strong>
                     planned a successor: <br/>
-                    - <strong>Start</strong>: {new_date_start}
+                    - <strong>Start</strong>: %(new_date_start)s
                     <br/>
-                    - <strong>End</strong>: {new_date_end}
-                    """.format(
-                        product=rec.name,
-                        new_date_start=new_line.date_start,
-                        new_date_end=new_line.date_end,
+                    - <strong>End</strong>: %(new_date_end)s
+                    """
                     )
+                    % {
+                        "product": rec.name,
+                        "new_date_start": new_line.date_start,
+                        "new_date_end": new_line.date_end,
+                    }
                 )
                 rec.contract_id.message_post(body=msg)
         return contract_line
@@ -886,17 +863,20 @@ class ContractLine(models.Model):
                         is_auto_renew,
                         post_message=False,
                     )
-            msg = _(
-                """Contract line for <strong>{product}</strong>
+            msg = (
+                _(
+                    """Contract line for <strong>%(product)s</strong>
                 suspended: <br/>
-                - <strong>Suspension Start</strong>: {new_date_start}
+                - <strong>Suspension Start</strong>: %(new_date_start)s
                 <br/>
-                - <strong>Suspension End</strong>: {new_date_end}
-                """.format(
-                    product=rec.name,
-                    new_date_start=date_start,
-                    new_date_end=date_end,
+                - <strong>Suspension End</strong>: %(new_date_end)s
+                """
                 )
+                % {
+                    "product": rec.name,
+                    "new_date_start": date_start,
+                    "new_date_end": date_end,
+                }
             )
             rec.contract_id.message_post(body=msg)
         return contract_line
@@ -907,10 +887,13 @@ class ContractLine(models.Model):
         for contract in self.mapped("contract_id"):
             lines = self.filtered(lambda l, c=contract: l.contract_id == c)
             msg = _(
-                """Contract line canceled: %s"""
-                % "<br/>- ".join(
-                    ["<strong>%s</strong>" % name for name in lines.mapped("name")]
-                )
+                "Contract line canceled: %s",
+                "<br/>- ".join(
+                    [
+                        "<strong>%(product)s</strong>" % {"product": name}
+                        for name in lines.mapped("name")
+                    ]
+                ),
             )
             contract.message_post(body=msg)
         self.mapped("predecessor_contract_line_id").write(
@@ -924,10 +907,13 @@ class ContractLine(models.Model):
         for contract in self.mapped("contract_id"):
             lines = self.filtered(lambda l, c=contract: l.contract_id == c)
             msg = _(
-                """Contract line Un-canceled: %s"""
-                % "<br/>- ".join(
-                    ["<strong>%s</strong>" % name for name in lines.mapped("name")]
-                )
+                "Contract line Un-canceled: %s",
+                "<br/>- ".join(
+                    [
+                        "<strong>%(product)s</strong>" % {"product": name}
+                        for name in lines.mapped("name")
+                    ]
+                ),
             )
             contract.message_post(body=msg)
         for rec in self:
@@ -1049,17 +1035,20 @@ class ContractLine(models.Model):
             else:
                 new_line = rec._renew_extend_line(date_end)
             res |= new_line
-            msg = _(
-                """Contract line for <strong>{product}</strong>
+            msg = (
+                _(
+                    """Contract line for <strong>%(product)s</strong>
                 renewed: <br/>
-                - <strong>Start</strong>: {new_date_start}
+                - <strong>Start</strong>: %(new_date_start)s
                 <br/>
-                - <strong>End</strong>: {new_date_end}
-                """.format(
-                    product=rec.name,
-                    new_date_start=date_start,
-                    new_date_end=date_end,
+                - <strong>End</strong>: %(new_date_end)s
+                """
                 )
+                % {
+                    "product": rec.name,
+                    "new_date_start": date_start,
+                    "new_date_end": date_end,
+                }
             )
             rec.contract_id.message_post(body=msg)
         return res
@@ -1080,9 +1069,7 @@ class ContractLine(models.Model):
         to_renew.renew()
 
     @api.model
-    def fields_view_get(
-        self, view_id=None, view_type="form", toolbar=False, submenu=False
-    ):
+    def get_view(self, view_id=None, view_type="form", **options):
         default_contract_type = self.env.context.get("default_contract_type")
         if view_type == "tree" and default_contract_type == "purchase":
             view_id = self.env.ref("contract.contract_line_supplier_tree_view").id
@@ -1091,7 +1078,7 @@ class ContractLine(models.Model):
                 view_id = self.env.ref("contract.contract_line_supplier_form_view").id
             elif default_contract_type == "sale":
                 view_id = self.env.ref("contract.contract_line_customer_form_view").id
-        return super().fields_view_get(view_id, view_type, toolbar, submenu)
+        return super().get_view(view_id, view_type, **options)
 
     def unlink(self):
         """stop unlink uncnacled lines"""

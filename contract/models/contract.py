@@ -8,10 +8,9 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 import logging
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.osv import expression
-from odoo.tests import Form
 from odoo.tools.translate import _
 
 _logger = logging.getLogger(__name__)
@@ -58,6 +57,7 @@ class ContractContract(models.Model):
         comodel_name="contract.line",
         inverse_name="contract_id",
         copy=True,
+        context={"active_test": False},
     )
     # Trick for being able to have 2 different views for the same o2m
     # We need this as one2many widget doesn't allow to define in the view
@@ -68,6 +68,7 @@ class ContractContract(models.Model):
         string="Contract lines (fixed)",
         comodel_name="contract.line",
         inverse_name="contract_id",
+        context={"active_test": False},
     )
 
     user_id = fields.Many2one(
@@ -93,7 +94,7 @@ class ContractContract(models.Model):
         string="Invoicing contact",
         comodel_name="res.partner",
         ondelete="restrict",
-        domain="['|', ('id', 'parent_of', partner_id), ('id', 'child_of', partner_id)]",
+        domain="['|',('id', 'parent_of', partner_id), ('id', 'child_of', partner_id)]",
     )
     partner_id = fields.Many2one(
         comodel_name="res.partner", inverse="_inverse_partner_id", required=True
@@ -313,9 +314,8 @@ class ContractContract(models.Model):
         "contract_line_ids.recurring_next_date",
         "contract_line_ids.is_canceled",
     )
+    # pylint: disable=missing-return
     def _compute_recurring_next_date(self):
-        # Compute the recurring_next_date on the contract based on the one
-        # defined on line level.
         for contract in self:
             recurring_next_date = contract.contract_line_ids.filtered(
                 lambda l: (
@@ -324,11 +324,15 @@ class ContractContract(models.Model):
                     and (not l.display_type or l.is_recurring_note)
                 )
             ).mapped("recurring_next_date")
-            # Take the earliest or set it as False if contract is stopped
-            # (no recurring_next_date).
-            contract.recurring_next_date = (
-                min(recurring_next_date) if recurring_next_date else False
-            )
+            # we give priority to computation from date_start if modified
+            if (
+                contract._origin
+                and contract._origin.date_start != contract.date_start
+                or not recurring_next_date
+            ):
+                super(ContractContract, contract)._compute_recurring_next_date()
+            else:
+                contract.recurring_next_date = min(recurring_next_date)
 
     @api.depends("contract_line_ids.create_invoice_visibility")
     def _compute_create_invoice_visibility(self):
@@ -376,7 +380,7 @@ class ContractContract(models.Model):
         self.pricelist_id = partner.property_product_pricelist.id
         self.fiscal_position_id = partner.env[
             "account.fiscal.position"
-        ].get_fiscal_position(partner.id)
+        ]._get_fiscal_position(partner)
         if self.contract_type == "purchase":
             self.payment_term_id = partner.property_supplier_payment_term_id
         else:
@@ -398,10 +402,9 @@ class ContractContract(models.Model):
         return new_lines
 
     def _prepare_invoice(self, date_invoice, journal=None):
-        """Prepare in a Form the values for the generated invoice record.
+        """Prepare the values for the generated invoice record.
 
-        :return: A tuple with the vals dictionary and the Form with the
-          preloaded values for being used in lines.
+        :return: A vals dictionary
         """
         self.ensure_one()
         if not journal:
@@ -418,37 +421,48 @@ class ContractContract(models.Model):
             )
         if not journal:
             raise ValidationError(
-                _("Please define a %s journal for the company '%s'.")
-                % (self.contract_type, self.company_id.name or "")
+                _(
+                    "Please define a %(contract_type)s journal "
+                    "for the company '%(company)s'."
+                )
+                % {
+                    "contract_type": self.contract_type,
+                    "company": self.company_id.name or "",
+                }
             )
-        invoice_type = "out_invoice"
-        if self.contract_type == "purchase":
-            invoice_type = "in_invoice"
-        move_form = Form(
-            self.env["account.move"]
-            .with_company(self.company_id)
-            .with_context(default_move_type=invoice_type, default_name="/")
+        invoice_type = (
+            "in_invoice" if self.contract_type == "purchase" else "out_invoice"
         )
-        move_form.partner_id = self.invoice_partner_id
+        vals = {
+            "move_type": invoice_type,
+            "company_id": self.company_id.id,
+            "partner_id": self.invoice_partner_id.id,
+            "ref": self.code,
+            "currency_id": self.currency_id.id,
+            "invoice_date": date_invoice,
+            "journal_id": journal.id,
+            "invoice_origin": self.name,
+            "invoice_line_ids": [],
+        }
         if self.payment_term_id:
-            move_form.invoice_payment_term_id = self.payment_term_id
+            vals.update(
+                {
+                    "invoice_payment_term_id": self.payment_term_id.id,
+                }
+            )
         if self.fiscal_position_id:
-            move_form.fiscal_position_id = self.fiscal_position_id
+            vals.update(
+                {
+                    "fiscal_position_id": self.fiscal_position_id.id,
+                }
+            )
         if invoice_type == "out_invoice" and self.user_id:
-            move_form.invoice_user_id = self.user_id
-        invoice_vals = move_form._values_to_save(all_fields=True)
-        invoice_vals.update(
-            {
-                "ref": self.code,
-                "company_id": self.company_id.id,
-                "currency_id": self.currency_id.id,
-                "invoice_date": date_invoice,
-                "date": date_invoice,
-                "journal_id": journal.id,
-                "invoice_origin": self.name,
-            }
-        )
-        return invoice_vals, move_form
+            vals.update(
+                {
+                    "invoice_user_id": self.user_id.id,
+                }
+            )
+        return vals
 
     def action_contract_send(self):
         self.ensure_one()
@@ -500,6 +514,7 @@ class ContractContract(models.Model):
                 not contract_line.is_canceled
                 and contract_line.recurring_next_date
                 and contract_line.recurring_next_date <= date_ref
+                and contract_line.next_period_date_start
             )
 
         lines2invoice = previous = self.env["contract.line"]
@@ -544,19 +559,22 @@ class ContractContract(models.Model):
             contract_lines = contract._get_lines_to_invoice(date_ref)
             if not contract_lines:
                 continue
-            invoice_vals, move_form = contract._prepare_invoice(date_ref)
+            invoice_vals = contract._prepare_invoice(date_ref)
             invoice_vals["invoice_line_ids"] = []
             for line in contract_lines:
-                invoice_line_vals = line._prepare_invoice_line(move_form=move_form)
+                invoice_line_vals = line._prepare_invoice_line()
                 if invoice_line_vals:
                     # Allow extension modules to return an empty dictionary for
                     # nullifying line. We should then cleanup certain values.
-                    del invoice_line_vals["company_id"]
-                    del invoice_line_vals["company_currency_id"]
-                    invoice_vals["invoice_line_ids"].append((0, 0, invoice_line_vals))
+                    if "company_id" in invoice_line_vals:
+                        del invoice_line_vals["company_id"]
+                    if "company_currency_id" in invoice_line_vals:
+                        del invoice_line_vals["company_currency_id"]
+                    invoice_vals["invoice_line_ids"].append(
+                        Command.create(invoice_line_vals)
+                    )
             invoices_values.append(invoice_vals)
             # Force the recomputation of journal items
-            del invoice_vals["line_ids"]
             contract_lines._update_recurring_next_date()
         return invoices_values
 
@@ -570,10 +588,16 @@ class ContractContract(models.Model):
             self.message_post(
                 body=_(
                     "Contract manually invoiced: "
-                    '<a href="#" data-oe-model="%s" data-oe-id="%s">Invoice'
+                    "<a"
+                    '    href="#" data-oe-model="%(model_name)s" '
+                    '    data-oe-id="%(rec_id)s"'
+                    ">Invoice"
                     "</a>"
                 )
-                % (invoice._name, invoice.id)
+                % {
+                    "model_name": invoice._name,
+                    "rec_id": invoice.id,
+                }
             )
         return invoices
 
@@ -597,11 +621,14 @@ class ContractContract(models.Model):
             for move in invoices & item._get_related_invoices():
                 move.message_post(
                     body=(
-                        _("%s by contract %s.")
-                        % (
-                            move._creation_message(),
-                            "<a href=# data-oe-model=contract.contract data-oe-id=%d>%s</a>"
-                            % (item.id, item.display_name),
+                        _(
+                            (
+                                "%(msg)s by contract <a href=# data-oe-model=contract.contract"
+                                " data-oe-id=%(contract_id)d>%(contract)s</a>."
+                            ),
+                            msg=move._creation_message(),
+                            contract_id=item.id,
+                            contract=item.display_name,
                         )
                     )
                 )

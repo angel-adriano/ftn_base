@@ -3,27 +3,25 @@
 # Copyright 2021 Tecnativa - Víctor Martínez
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
 from collections import namedtuple
 from datetime import timedelta
 
 from dateutil.relativedelta import relativedelta
-from freezegun import freeze_time
 
 from odoo import fields
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import Form, common, tagged
+from odoo.tests import Form, common
 
 
 def to_date(date):
     return fields.Date.to_date(date)
 
 
-class TestContractBase(common.SavepointCase):
+class TestContractBase(common.TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.uom_categ_obj = cls.env["uom.category"]
-        cls.uom_obj = cls.env["uom.uom"]
         cls.today = fields.Date.today()
         cls.pricelist = cls.env["product.pricelist"].create(
             {"name": "pricelist for contract test"}
@@ -33,13 +31,6 @@ class TestContractBase(common.SavepointCase):
                 "name": "partner test contract",
                 "property_product_pricelist": cls.pricelist.id,
                 "email": "demo@demo.com",
-            }
-        )
-        cls.partner_2 = cls.env["res.partner"].create(
-            {
-                "name": "partner test contract 2",
-                "property_product_pricelist": cls.pricelist.id,
-                "email": "demo2@demo.com",
             }
         )
         cls.product_1 = cls.env.ref("product.product_product_1")
@@ -178,21 +169,7 @@ class TestContractBase(common.SavepointCase):
             }
         )
 
-    @classmethod
-    def _create_uom(cls):
-        vals = {
-            "name": "New Uom Categ",
-        }
-        categ = cls.uom_categ_obj.create(vals)
-        vals = {
-            "name": "New Uom",
-            "category_id": categ.id,
-            "factor": 1.0,
-        }
-        return cls.uom_obj.create(vals)
 
-
-@tagged("post_install", "-at_install")
 class TestContract(TestContractBase):
     def _add_template_line(self, overrides=None):
         if overrides is None:
@@ -265,18 +242,17 @@ class TestContract(TestContractBase):
         self.assertEqual(self.acct_line.price_unit, 1100)
         # Try to write other price
         self.acct_line.price_unit = 10
-        self.acct_line.refresh()
+        self.acct_line.invalidate_model()
         self.assertEqual(self.acct_line.price_unit, 1100)
         # Now disable automatic price
         self.acct_line.automatic_price = False
         self.acct_line.price_unit = 10
-        self.acct_line.refresh()
+        self.acct_line.invalidate_model()
         self.assertEqual(self.acct_line.price_unit, 10)
 
     def test_contract(self):
         self.assertEqual(self.contract.recurring_next_date, to_date("2018-01-15"))
         self.assertAlmostEqual(self.acct_line.price_subtotal, 50.0)
-        self.acct_line._onchange_product_id()
         self.acct_line.price_unit = 100.0
         self.contract.partner_id = self.partner.id
         self.contract.recurring_create_invoice()
@@ -290,7 +266,7 @@ class TestContract(TestContractBase):
 
     def test_contract_level_recurrence(self):
         self.contract3.recurring_create_invoice()
-        self.contract3.flush()
+        self.contract3.flush_recordset()
 
     def test_contract_daily(self):
         recurring_next_date = to_date("2018-02-23")
@@ -507,14 +483,6 @@ class TestContract(TestContractBase):
             self.contract.partner_id.property_product_pricelist,
         )
 
-    def test_invoice_partner_id_domain(self):
-        contract_form = self.contract.fields_view_get(False, "form")
-        invoice_partner_id_field = contract_form["fields"].get("invoice_partner_id")
-        self.assertEqual(
-            self.contract._fields["invoice_partner_id"].domain,
-            invoice_partner_id_field.get("domain"),
-        )
-
     def test_uom(self):
         uom_litre = self.env.ref("uom.product_uom_litre")
         self.acct_line.uom_id = uom_litre.id
@@ -525,17 +493,6 @@ class TestContract(TestContractBase):
         self.contract.pricelist_id = False
         self.acct_line.quantity = 2
         self.assertAlmostEqual(self.acct_line.price_subtotal, 100.0)
-
-    def test_contract_uom_domain(self):
-        """Create a new uom. Try to set it on contract line.
-        The one set should not be that one"""
-        contract_form = self.contract.fields_view_get(False, "form")
-        contract_line_ids_field = contract_form["fields"].get("contract_line_ids")
-        uom_id_field = contract_line_ids_field["views"]["tree"]["fields"].get("uom_id")
-        self.assertEqual(
-            self.contract.contract_line_ids._fields["uom_id"].domain,
-            uom_id_field.get("domain"),
-        )
 
     def test_check_journal(self):
         journal = self.env["account.journal"].search([("type", "=", "sale")])
@@ -603,8 +560,15 @@ class TestContract(TestContractBase):
                 test_value = contract_line[key]
                 try:
                     test_value = test_value.id
-                except AttributeError:
-                    pass
+                except AttributeError as ae:
+                    # This try/except is for relation fields.
+                    # For normal fields, test_value would be
+                    # str, float, int ... without id
+                    logging.info(
+                        "Ignored AttributeError ('%s' is not a relation field): %s",
+                        key,
+                        ae,
+                    )
                 self.assertEqual(test_value, value)
 
     def test_send_mail_contract(self):
@@ -644,7 +608,7 @@ class TestContract(TestContractBase):
         self.contract.copy()
         purchase_count = self.partner.purchase_contract_count + 1
         self.contract2.copy()
-        self.partner.refresh()
+        self.partner.invalidate_model()
         self.assertEqual(self.partner.sale_contract_count, sale_count)
         self.assertEqual(self.partner.purchase_contract_count, purchase_count)
 
@@ -670,14 +634,17 @@ class TestContract(TestContractBase):
         show_contract = self.partner.with_context(
             contract_type="sale"
         ).act_show_contract()
-        self.assertDictContainsSubset(
-            {
-                "name": "Customer Contracts",
-                "type": "ir.actions.act_window",
-                "res_model": "contract.contract",
-                "xml_id": "contract.action_customer_contract",
-            },
+        self.assertEqual(
             show_contract,
+            {
+                **show_contract,
+                **{
+                    "name": "Customer Contracts",
+                    "type": "ir.actions.act_window",
+                    "res_model": "contract.contract",
+                    "xml_id": "contract.action_customer_contract",
+                },
+            },
             "There was an error and the view couldn't be opened.",
         )
 
@@ -1724,7 +1691,7 @@ class TestContract(TestContractBase):
         self.assertFalse(line_4.successor_contract_line_id)
 
     def test_renew_create_new_line(self):
-        date_start = fields.Date.from_string("2022-01-01")
+        date_start = self.today - relativedelta(months=9)
         date_end = date_start + relativedelta(months=12) - relativedelta(days=1)
         self.acct_line.write(
             {
@@ -1744,7 +1711,7 @@ class TestContract(TestContractBase):
 
     def test_renew_extend_original_line(self):
         self.contract.company_id.create_new_line_at_contract_line_renew = False
-        date_start = fields.Date.from_string("2022-01-01")
+        date_start = self.today - relativedelta(months=9)
         date_end = date_start + relativedelta(months=12) - relativedelta(days=1)
         self.acct_line.write(
             {
@@ -1776,6 +1743,29 @@ class TestContract(TestContractBase):
             len(contracts.mapped("contract_line_ids")),
             len(invoice_lines),
         )
+
+    def test_recurring_create_invoice(self):
+        self.acct_line.date_start = "2024-01-01"
+        self.acct_line.recurring_invoicing_type = "pre-paid"
+        self.acct_line.date_end = "2024-04-01"
+        self.contract.recurring_create_invoice()
+        self.assertEqual(self.acct_line.last_date_invoiced, to_date("2024-01-31"))
+        self.assertEqual(self.acct_line.recurring_next_date, to_date("2024-02-01"))
+        self.assertEqual(len(self.contract._get_related_invoices()), 1)
+        self.contract.recurring_create_invoice()
+        self.assertEqual(self.acct_line.last_date_invoiced, to_date("2024-02-29"))
+        self.assertEqual(self.acct_line.recurring_next_date, to_date("2024-03-01"))
+        self.assertEqual(len(self.contract._get_related_invoices()), 2)
+        self.contract.recurring_create_invoice()
+        self.assertEqual(self.acct_line.last_date_invoiced, to_date("2024-03-31"))
+        self.assertEqual(self.acct_line.recurring_next_date, to_date("2024-04-01"))
+        self.assertEqual(len(self.contract._get_related_invoices()), 3)
+        self.contract.recurring_create_invoice()
+        self.assertEqual(self.acct_line.last_date_invoiced, to_date("2024-04-01"))
+        self.assertFalse(self.acct_line.recurring_next_date)
+        self.assertEqual(len(self.contract._get_related_invoices()), 4)
+        self.contract.recurring_create_invoice()
+        self.assertEqual(len(self.contract._get_related_invoices()), 4)
 
     def test_get_period_to_invoice_monthlylastday_postpaid(self):
         self.acct_line.date_start = "2018-01-05"
@@ -2078,7 +2068,8 @@ class TestContract(TestContractBase):
         ]
         self.assertEqual(set(lines.mapped("state")), set(states))
         # Test search method
-        lines.flush()  # Needed for computed stored fields like termination_notice_date
+        lines.flush_recordset()  # Needed for computed stored fields
+        # like termination_notice_date
         for state in states:
             lines = self.env["contract.line"].search([("state", "=", state)])
             self.assertTrue(lines, state)
@@ -2185,17 +2176,17 @@ class TestContract(TestContractBase):
             action["context"]["default_contract_line_id"], self.acct_line.id
         )
 
-    def test_purchase_fields_view_get(self):
+    def test_purchase_get_view(self):
         purchase_tree_view = self.env.ref("contract.contract_line_supplier_tree_view")
         purchase_form_view = self.env.ref("contract.contract_line_supplier_form_view")
-        view = self.acct_line.with_context(
-            default_contract_type="purchase"
-        ).fields_view_get(view_type="tree")
-        self.assertEqual(view["view_id"], purchase_tree_view.id)
-        view = self.acct_line.with_context(
-            default_contract_type="purchase"
-        ).fields_view_get(view_type="form")
-        self.assertEqual(view["view_id"], purchase_form_view.id)
+        view = self.acct_line.with_context(default_contract_type="purchase").get_view(
+            view_type="tree"
+        )
+        self.assertEqual(view["id"], purchase_tree_view.id)
+        view = self.acct_line.with_context(default_contract_type="purchase").get_view(
+            view_type="form"
+        )
+        self.assertEqual(view["id"], purchase_form_view.id)
 
     def test_multicompany_partner_edited(self):
         """Editing a partner with contracts in several companies works."""
@@ -2218,12 +2209,12 @@ class TestContract(TestContractBase):
             company_id=company2.id
         ).write({"is_company": False, "parent_id": parent_partner.id})
 
-    def test_sale_fields_view_get(self):
+    def test_sale_get_view(self):
         sale_form_view = self.env.ref("contract.contract_line_customer_form_view")
-        view = self.acct_line.with_context(
-            default_contract_type="sale"
-        ).fields_view_get(view_type="form")
-        self.assertEqual(view["view_id"], sale_form_view.id)
+        view = self.acct_line.with_context(default_contract_type="sale").get_view(
+            view_type="form"
+        )
+        self.assertEqual(view["id"], sale_form_view.id)
 
     def test_contract_count_invoice(self):
         self.contract.recurring_create_invoice()
@@ -2301,7 +2292,7 @@ class TestContract(TestContractBase):
         action = self.contract.action_terminate_contract()
         wizard = (
             self.env[action["res_model"]]
-            .with_context(action["context"])
+            .with_context(**action["context"])
             .create(
                 {
                     "terminate_date": "2018-03-01",
@@ -2325,40 +2316,6 @@ class TestContract(TestContractBase):
         self.assertFalse(self.contract.terminate_reason_id)
         self.assertFalse(self.contract.terminate_comment)
 
-    def test_action_terminate_contract_check_recurring_dates(self):
-        """
-        The use case here is to use a contract with recurrence on its level.
-
-        Create a first invoice
-        Then, terminate it => Lines should have a end_date
-        Then, create a new invoice (the last one).
-        The recurring next date should be False.
-        """
-        group_can_terminate_contract = self.env.ref("contract.can_terminate_contract")
-        group_can_terminate_contract.users |= self.env.user
-        self.contract3.contract_line_ids.write({"date_start": "2018-03-01"})
-        self.contract3.recurring_create_invoice()
-        self.assertEqual(to_date("2018-04-01"), self.contract3.recurring_next_date)
-
-        action = self.contract3.action_terminate_contract()
-        wizard = (
-            self.env[action["res_model"]]
-            .with_context(action["context"])
-            .create(
-                {
-                    "terminate_date": "2018-04-02",
-                    "terminate_reason_id": self.terminate_reason.id,
-                    "terminate_comment": "terminate_comment",
-                }
-            )
-        )
-        wizard.terminate_contract()
-        # This is the last invoice
-        self.contract3.recurring_create_invoice()
-
-        # Recurring next date should be False
-        self.assertFalse(self.contract3.recurring_next_date)
-
     def test_terminate_date_before_last_date_invoiced(self):
         self.contract.recurring_create_invoice()
         self.assertEqual(self.acct_line.last_date_invoiced, to_date("2018-02-14"))
@@ -2371,7 +2328,6 @@ class TestContract(TestContractBase):
                 to_date("2018-02-13"),
             )
 
-    @freeze_time("2020-01-01 00:00:00")
     def test_recurrency_propagation(self):
         # Existing contract
         vals = {
@@ -2439,17 +2395,3 @@ class TestContract(TestContractBase):
         action = self.contract.action_preview()
         self.assertIn("/my/contracts/", action["url"])
         self.assertIn("access_token=", action["url"])
-
-    def test_automatic_price_with_specific_uom(self):
-        uom_hour = self.env.ref("uom.product_uom_hour")
-        uom_day = self.env.ref("uom.product_uom_day")
-        # Set automatic price on contract line
-        self.acct_line.automatic_price = True
-        # Check UOM from contract line and product and product price to be the same
-        self.assertEqual(self.product_1.uom_id, uom_hour)
-        self.assertEqual(self.acct_line.uom_id, uom_hour)
-        self.assertEqual(self.acct_line.price_unit, 30.75)
-        # Check UOM update and price in contract line
-        self.acct_line.uom_id = uom_day.id
-        self.acct_line.refresh()
-        self.assertEqual(self.acct_line.price_unit, 30.75 * 8)

@@ -26,6 +26,7 @@
                         name="contract_line_ids"
                         widget="section_and_note_one2many"
                         nolabel="1"
+                        colspan="2"
                     >
                         <tree>
                             <control>
@@ -54,7 +55,10 @@
                                 attrs="{'readonly': [('automatic_price', '=', True)]}"
                             />
                             <field name="specific_price" invisible="1" />
-                            <field name="discount" groups="base.group_no_one" />
+                            <field
+                                name="discount"
+                                groups="product.group_discount_per_so_line"
+                            />
                             <field name="price_subtotal" />
                             <field name="recurring_rule_type" invisible="1" />
                             <field name="recurring_interval" invisible="1" />
@@ -66,8 +70,11 @@
                     name="group_legend"
                     string="Legend (for the markers inside invoice lines description)"
                 >
-                    <p> <strong>#START#</strong>: Start date of the invoiced period</p>
-                    <p> <strong>#END#</strong>: End date of the invoiced period</p>
+                    <div colspan="2">
+                        <p> <strong
+                            >#START#</strong>: Start date of the invoiced period</p>
+                        <p> <strong>#END#</strong>: End date of the invoiced period</p>
+                    </div>
                 </group>
             </form>
         </field>

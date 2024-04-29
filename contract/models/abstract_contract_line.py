@@ -17,16 +17,17 @@ class ContractAbstractContractLine(models.AbstractModel):
     _description = "Abstract Recurring Contract Line"
 
     product_id = fields.Many2one("product.product", string="Product")
+
     name = fields.Text(string="Description", required=True)
-    partner_id = fields.Many2one(
-        comodel_name="res.partner", related="contract_id.partner_id"
-    )
     quantity = fields.Float(default=1.0, required=True)
-    allowed_uom_categ_id = fields.Many2one(related="product_id.uom_id.category_id")
+    product_uom_category_id = fields.Many2one(  # Used for domain of field uom_id
+        comodel_name="uom.category",
+        related="product_id.uom_id.category_id",
+    )
     uom_id = fields.Many2one(
-        "uom.uom",
+        comodel_name="uom.uom",
         string="Unit of Measure",
-        domain="[('category_id', '=?', allowed_uom_categ_id)]",
+        domain="[('category_id', '=', product_uom_category_id)]",
     )
     automatic_price = fields.Boolean(
         string="Auto-price?",
@@ -34,15 +35,17 @@ class ContractAbstractContractLine(models.AbstractModel):
         "applying the pricelist to the product. If not, you will be "
         "able to introduce a manual price",
     )
-    specific_price = fields.Float(string="Specific Price")
-    price_unit = fields.Float(
+    # Just to have a currency_id here - will get overwriten in contract.line
+    # model with the related currency from the contract
+    currency_id = fields.Many2one("res.currency")
+    specific_price = fields.Monetary()
+    price_unit = fields.Monetary(
         string="Unit Price",
         compute="_compute_price_unit",
         inverse="_inverse_price_unit",
     )
-    price_subtotal = fields.Float(
+    price_subtotal = fields.Monetary(
         compute="_compute_price_subtotal",
-        digits="Account",
         string="Sub Total",
     )
     discount = fields.Float(
@@ -52,7 +55,6 @@ class ContractAbstractContractLine(models.AbstractModel):
         " It should be less or equal to 100",
     )
     sequence = fields.Integer(
-        string="Sequence",
         default=10,
         help="Sequence of the contract line when displaying contracts",
     )
@@ -83,7 +85,7 @@ class ContractAbstractContractLine(models.AbstractModel):
         readonly=False,
         copy=True,
     )
-    last_date_invoiced = fields.Date(string="Last Date Invoiced")
+    last_date_invoiced = fields.Date()
     is_canceled = fields.Boolean(string="Canceled", default=False)
     is_auto_renew = fields.Boolean(string="Auto Renew", default=False)
     auto_renew_interval = fields.Integer(
@@ -164,6 +166,12 @@ class ContractAbstractContractLine(models.AbstractModel):
     def _compute_date_start(self):
         self._set_recurrence_field("date_start")
 
+    # pylint: disable=missing-return
+    @api.depends("contract_id.recurring_next_date", "contract_id.line_recurrence")
+    def _compute_recurring_next_date(self):
+        super()._compute_recurring_next_date()
+        self._set_recurrence_field("recurring_next_date")
+
     @api.depends("display_type", "note_invoicing_mode")
     def _compute_is_recurring_note(self):
         for record in self:
@@ -179,14 +187,13 @@ class ContractAbstractContractLine(models.AbstractModel):
         "quantity",
         "contract_id.pricelist_id",
         "contract_id.partner_id",
-        "uom_id",
     )
     def _compute_price_unit(self):
         """Get the specific price if no auto-price, and the price obtained
         from the pricelist otherwise.
         """
         for line in self:
-            if line.automatic_price:
+            if line.automatic_price and line.product_id:
                 pricelist = (
                     line.contract_id.pricelist_id
                     or line.contract_id.partner_id.with_company(
@@ -199,13 +206,12 @@ class ContractAbstractContractLine(models.AbstractModel):
                         line.quantity,
                     ),
                     pricelist=pricelist.id,
-                    partner=line.contract_id.partner_id,
+                    partner=line.contract_id.partner_id.id,
                     date=line.env.context.get(
                         "old_date", fields.Date.context_today(line)
                     ),
-                    uom=line.uom_id.id,
                 )
-                line.price_unit = product.price
+                line.price_unit = pricelist._get_product_price(product, quantity=1)
             else:
                 line.price_unit = line.specific_price
 
@@ -244,14 +250,20 @@ class ContractAbstractContractLine(models.AbstractModel):
 
         date = self.recurring_next_date or fields.Date.context_today(self)
         partner = self.contract_id.partner_id or self.env.user.partner_id
-        product = self.product_id.with_context(
-            lang=partner.lang,
-            partner=partner.id,
-            quantity=self.quantity,
-            date=date,
-            pricelist=self.contract_id.pricelist_id.id,
-            uom=self.uom_id.id,
-        )
-        vals["name"] = self.product_id.get_product_multiline_description_sale()
-        vals["price_unit"] = product.price
+        if self.product_id:
+            product = self.product_id.with_context(
+                lang=partner.lang,
+                partner=partner.id,
+                quantity=self.quantity,
+                date=date,
+                pricelist=self.contract_id.pricelist_id.id,
+                uom=self.uom_id.id,
+            )
+            vals["name"] = self.product_id.get_product_multiline_description_sale()
+            if self.contract_id.pricelist_id:
+                vals["price_unit"] = self.contract_id.pricelist_id._get_product_price(
+                    product, quantity=1
+                )
+            else:
+                vals["price_unit"] = 0.0
         self.update(vals)
