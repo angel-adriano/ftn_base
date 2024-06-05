@@ -8,7 +8,7 @@ from lxml import etree
 
 from odoo import fields, models, api, _
 import odoo.addons.decimal_precision as dp
-from odoo.exceptions import UserError, Warning
+from odoo.exceptions import UserError
 
 from reportlab.graphics.barcode import createBarcodeDrawing
 from reportlab.lib.units import mm
@@ -504,10 +504,10 @@ class AccountMove(models.Model):
         self.discount = round(self.discount, no_decimales)
         self.subtotal = self.roundTraditional(self.subtotal, no_decimales)
         impuestos = {}
-        if objetoimp != '04':
-           tras_tot = round(tras_tot, no_decimales)
-           ret_tot = round(ret_tot, no_decimales)
-           if tax_grouped_tras or tax_grouped_ret:
+        #if objetoimp != '04':
+        if tax_grouped_tras or tax_grouped_ret:
+               tras_tot = round(tras_tot, no_decimales)
+               ret_tot = round(ret_tot, no_decimales)
                retenciones = []
                traslados = []
                if tax_grouped_tras:
@@ -703,11 +703,6 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                 url = '%s' % ('http://facturacion2.itadmin.com.mx/api/invoice')
             elif invoice.company_id.proveedor_timbrado == 'multifactura3':
                 url = '%s' % ('http://facturacion3.itadmin.com.mx/api/invoice')
-            elif invoice.company_id.proveedor_timbrado == 'gecoerp':
-                if self.company_id.modo_prueba:
-                    url = '%s' % ('https://itadmin.gecoerp.com/invoice/?handler=OdooHandler33')
-                else:
-                    url = '%s' % ('https://itadmin.gecoerp.com/invoice/?handler=OdooHandler33')
             else:
                 invoice.write({'proceso_timbrado': False})
                 self.env.cr.commit()
@@ -796,11 +791,6 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                     url = '%s' % ('http://facturacion2.itadmin.com.mx/api/refund')
                 elif invoice.company_id.proveedor_timbrado == 'multifactura3':
                     url = '%s' % ('http://facturacion3.itadmin.com.mx/api/refund')
-                elif self.company_id.proveedor_timbrado == 'gecoerp':
-                    if self.company_id.modo_prueba:
-                        url = '%s' % ('https://itadmin.gecoerp.com/refund/?handler=OdooHandler33')
-                    else:
-                        url = '%s' % ('https://itadmin.gecoerp.com/refund/?handler=OdooHandler33')
                 else:
                     raise UserError(
                         _('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
@@ -879,8 +869,6 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                 url = '%s' % ('http://facturacion2.itadmin.com.mx/api/consulta-cacelar')
             elif invoice.company_id.proveedor_timbrado == 'multifactura3':
                 url = '%s' % ('http://facturacion3.itadmin.com.mx/api/consulta-cacelar')
-            elif invoice.company_id.proveedor_timbrado == 'gecoerp':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/consulta-cacelar')
             else:
                 raise UserError(
                     _('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
@@ -917,8 +905,11 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
 #                    _logger.info('EstatusCancelacion: %s', json_response['estatuscancelacion'])
                     if json_response['estatuscancelacion'] == 'Solicitud rechazada':
                         invoice.estado_factura = 'solicitud_rechazada'
+                    if not json_response['estatuscancelacion']:
+                        invoice.estado_factura = 'solicitud_rechazada'
             else:
                 _logger.info('Error... %s', response.text)
+            self.env.cr.commit()
         return True
 
     def action_cfdi_rechazada(self):

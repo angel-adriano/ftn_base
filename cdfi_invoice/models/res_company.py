@@ -13,9 +13,8 @@ class ResCompany(models.Model):
 
     proveedor_timbrado= fields.Selection(
         selection=[('multifactura', _('Servidor 1')),
-                   ('gecoerp', _('Servidor 2')),
-                   ('multifactura2', _('Servidor 3')),
-                   ('multifactura3', _('Servidor 4')),],
+                   ('multifactura2', _('Servidor 2')),
+                   ('multifactura3', _('Servidor 3')),],
         string=_('Proveedor de timbrado'), 
     )
     api_key = fields.Char(string=_('API Key'))
@@ -78,12 +77,7 @@ class ResCompany(models.Model):
         url=''
         if self.proveedor_timbrado == 'multifactura':
             url = '%s' % ('http://facturacion.itadmin.com.mx/api/saldo')
-        elif self.proveedor_timbrado == 'gecoerp':
-            if self.modo_prueba:
-                #url = '%s' % ('https://ws.gecoerp.com/itadmin/pruebas/invoice/?handler=OdooHandler33')
-                url = '%s' % ('https://itadmin.gecoerp.com/invoice/?handler=OdooHandler33')
-            else:
-                url = '%s' % ('https://itadmin.gecoerp.com/invoice/?handler=OdooHandler33')
+
         if not url:
             return
         try:
