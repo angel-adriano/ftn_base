@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+    	<record id="view_ir_attachment_form_inherit_cfdi_hr_expense" model="ir.ui.view">
+	        <field name="name">ir.attachment.form.inherit.cfdi.hr.expence</field>
+	        <field name="model">ir.attachment</field>
+	        <field name="inherit_id" ref="l10n_mx_sat_sync_itadmin.view_ir_attachment_form_inherit_cfdi_account_files_invoice" />
+	        <field name="arch" type="xml">
+	        	<button name="action_view_payments" position='after'>
+		        	<button name="action_view_expenses"
+	                        type="object"
+	                        class="oe_stat_button"
+	                        icon="fa-pencil-square-o"
+	                        attrs="{'invisible': [('expense_count', '=', 0)]}">
+	                        <field name="expense_count" widget="statinfo" string="Expenses"/>
+	                    </button>
+                </button>
+	        </field>
+	    </record>
+    </data>
+</odoo>
