@@ -86,7 +86,7 @@ class XMLInvoiceReconcile(models.TransientModel):
                    raise UserError("El total de la factura y el XML son distintos")
             else:
                diff = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.rango')
-               if  payment.amount < self.amount - float(diff) or payment.amount_total > self.amount + float(diff):
+               if  payment.amount < self.amount - float(diff) or payment.amount > self.amount + float(diff):
                    raise UserError("El total de la factura no está dentro del rango permitido")
 
             payment.write({'folio_fiscal': self.folio_fiscal,
