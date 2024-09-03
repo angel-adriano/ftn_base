@@ -1,0 +1,25 @@
+/* Bold font for Delivery and Invoice Status */
+
+td[title="To be Delivered"] {
+    font-weight: bold;
+}
+
+td[title="Partially Delivered"] {
+    font-weight: bold;
+}
+
+td[title="Delivered"] {
+    font-weight: bold;
+}
+
+td[title="To Invoice"] {
+    font-weight: bold;
+}
+
+td[title="Partially Paid"] {
+    font-weight: bold;
+}
+
+td[title="Paid"] {
+    font-weight: bold;
+}

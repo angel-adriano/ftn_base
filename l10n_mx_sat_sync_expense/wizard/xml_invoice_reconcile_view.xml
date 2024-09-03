@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_xml_hr_expanese_reconcile_ir_attachment_tree" model="ir.ui.view">
+            <field name="name">Reconcile XML Expense</field>
+            <field name="model">xml.invoice.reconcile</field>
+            <field name="arch" type="xml">
+                <tree string="Conciliar pagos" editable="bottom" create="false">
+                    <field name="attachment_id" readonly="1"/>
+                    <field name="folio_factura" readonly="1"/>
+                    <field name="expense_id" required="1" />
+                    <field name="date" readonly="1"/>
+                    <field name="client_name" readonly="1"/>
+                    <field name="amount" readonly="1"/>
+                    <field name="reconcilled" invisible="1"/>
+                    <button name="action_reconcile" attrs="{'invisible' : [('reconcilled','=', True)]}" string="Conciliar" type="object" class="oe_highlight"/> 
+               </tree>
+            </field>
+        </record>
+        <record id="action_xml_hr_expanese_reconcile_view" model="ir.actions.act_window">
+            <field name="name">Reconcile hr expanese XML File</field>
+            <field name="res_model">xml.invoice.reconcile</field>
+            <field name="view_mode">tree</field>
+            <field eval="view_xml_hr_expanese_reconcile_ir_attachment_tree" name="view_id"/>
+        </record>
+    </data>
+</odoo>

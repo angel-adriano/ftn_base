@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--Inherit Sale Order Form View-->
+    <record id="view_order_form_inherit_status" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.status</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <field name="payment_term_id" position="after">
+                <field name="so_delivery_status"/>
+                <field name="so_invoice_status" string="Invoice Status"/>
+            </field>
+        </field>
+    </record>
+
+    <!--Inherit Sale Order Tree View-->
+    <record id="view_order_tree_inherit_status" model="ir.ui.view">
+        <field name="name">sale.order.tree.inherit.status</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <field name="invoice_status" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </field>
+            <field name="invoice_status" position="after">
+                <field name="so_delivery_status"/>
+                <field name="so_invoice_status" string="Invoice Status"/>
+            </field>
+        </field>
+    </record>
+
+    <!--Inherit Sale Quotation Tree View-->
+    <record id="view_quotation_tree_inherit_status" model="ir.ui.view">
+        <field name="name">sale.order.quotation.tree.inherit.status</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <field name="invoice_status" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="invoice_status" position="after">
+                <field name="so_delivery_status"/>
+                <field name="so_invoice_status" string="Invoice Status"/>
+            </field>
+        </field>
+    </record>
+
+    <!--Inherit Sale Order Filter View-->
+    <record id="view_sales_order_filter_inherit_status" model="ir.ui.view">
+        <field name="name">sale.order.search.inherit.status</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_sale_orders_filter']" position="before">
+                <separator/>
+                <filter string="Partially Delivered" name="so_partially_deliver" domain="[('so_delivery_status', '=', 'partial_deliver')]"/>
+                <filter string="Delivered" name="so_delivered" domain="[('so_delivery_status', '=', 'delivered')]"/>
+                <filter string="Partially Paid" name="so_partially_paid" domain="[('so_invoice_status', '=', 'partial_paid')]"/>
+                <filter string="Paid" name="so_posted" domain="[('so_invoice_status', '=', 'posted')]"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

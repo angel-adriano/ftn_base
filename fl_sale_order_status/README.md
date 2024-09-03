@@ -1,0 +1,1 @@
+Delivery and Invoice Status in Sale Order for Odoo 14
