@@ -82,11 +82,11 @@ class XMLInvoiceReconcile(models.TransientModel):
             self.write({'reconcilled':True})
         if payment:
             if self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.tipo_conciliacion') == '01':
-               if payment.amount_total != self.amount:
+               if payment.amount != self.amount:
                    raise UserError("El total de la factura y el XML son distintos")
             else:
                diff = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.rango')
-               if  payment.amount_total < self.amount - float(diff) or payment.amount_total > self.amount + float(diff):
+               if  payment.amount < self.amount - float(diff) or payment.amount > self.amount + float(diff):
                    raise UserError("El total de la factura no está dentro del rango permitido")
 
             payment.write({'folio_fiscal': self.folio_fiscal,
