@@ -8,3 +8,4 @@ access_reconcile_vendor_cfdi_xml_bill,access_reconcile_vendor_cfdi_xml_bill,mode
 access_xml_invoice_reconcile,access_xml_invoice_reconcile,model_xml_invoice_reconcile,,1,1,1,1
 access_act_window, access_act_window,base.model_ir_actions_act_window,account.group_account_invoice,1,1,1,0
 access_attachment_window, access_attachment_window,base.model_ir_attachment,account.group_account_invoice,1,1,1,0
+access_solicitud_ws,access_solicitud_ws,model_solicitud_ws,,1,1,1,1

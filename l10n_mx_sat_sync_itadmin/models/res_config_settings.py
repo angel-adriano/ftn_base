@@ -12,7 +12,7 @@ class ResConfigSettings(models.TransientModel):
     l10n_mx_esignature_ids = fields.Many2many(related='company_id.l10n_mx_esignature_ids', 
         string='MX E-signature', readonly=False)
     last_cfdi_fetch_date = fields.Datetime("Last CFDI fetch date", related="company_id.last_cfdi_fetch_date", readonly=False)
-    product_type_default = fields.Selection(selection=_selection_product_type, string='Crear Productos', required=True,
+    product_type_default = fields.Selection(selection=_selection_product_type, string='Crear Productos', default='consu',
         help='A stockable product is a product for which you manage stock. The "Inventory" app has to be installed.\n'
              'A consumable product, on the other hand, is a product for which stock is not managed.\n'
              'A service is a non-material product you provide.\n'
@@ -20,6 +20,7 @@ class ResConfigSettings(models.TransientModel):
              'the e-commerce such as e-books, music, pictures,... The "Digital Product" module has to be installed.')
     si_producto_no_tiene_codigo = fields.Selection([('Crear automatico', 'Crear automatico'),('Buscar manual', 'Usar producto por defecto')], 'Si producto no se encuentra')
     buscar_producto_por_clave_sat = fields.Boolean("Buscar producto por clave SAT")
+    solo_documentos_de_proveedor = fields.Boolean("Solo documentos de proveedor", readonly=False)
     download_type = fields.Selection([('API', 'API'),('Web', 'Web')], 'Forma de descarga', default='Web')
     tipo_conciliacion = fields.Selection([('01', 'Exacta'),('02', 'Rango')], 'Tipo conciliación', default='01')
     rango = fields.Float("Rango +/-")
@@ -34,6 +35,7 @@ class ResConfigSettings(models.TransientModel):
             download_type=self.env['ir.config_parameter'].with_user(self.env.user).get_param('l10n_mx_sat_sync_itadmin.download_type'),
             tipo_conciliacion=self.env['ir.config_parameter'].with_user(self.env.user).get_param('l10n_mx_sat_sync_itadmin.tipo_conciliacion'),
             rango=self.env['ir.config_parameter'].with_user(self.env.user).get_param('l10n_mx_sat_sync_itadmin.rango'),
+            solo_documentos_de_proveedor=self.env['ir.config_parameter'].with_user(self.env.user).get_param('l10n_mx_sat_sync_itadmin.solo_documentos_de_proveedor'),
         )
         return res
 
@@ -46,6 +48,7 @@ class ResConfigSettings(models.TransientModel):
         self.env['ir.config_parameter'].with_user(self.env.user).set_param('l10n_mx_sat_sync_itadmin.download_type', self.download_type)
         self.env['ir.config_parameter'].with_user(self.env.user).set_param('l10n_mx_sat_sync_itadmin.tipo_conciliacion', self.tipo_conciliacion)
         self.env['ir.config_parameter'].with_user(self.env.user).set_param('l10n_mx_sat_sync_itadmin.rango', self.rango)
+        self.env['ir.config_parameter'].with_user(self.env.user).set_param('l10n_mx_sat_sync_itadmin.solo_documentos_de_proveedor', self.solo_documentos_de_proveedor)
         return res
 
     def import_sat_invoice(self):

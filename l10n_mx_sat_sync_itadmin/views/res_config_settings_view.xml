@@ -28,17 +28,29 @@
                         <div class="o_setting_right_pane">
                             <div class="content-group">
                                 <div class="row mt16">
-                                	<label for="product_type_default" class="col-md-3 o_light_label"/>
+                                    <label for="product_type_default" class="col-md-3 o_light_label"/>
                                     <field name="product_type_default"/>
                                 </div>
                             </div>
                         </div>
                         <div class="o_setting_left_pane">
                         </div>
+
+                        <div class="o_setting_left_pane">
+                            <field name="solo_documentos_de_proveedor" class="oe_inline" />
+                        </div>
                         <div class="o_setting_right_pane">
+                            <label for="solo_documentos_de_proveedor"/>
+                        </div>
+
+                        <div class="o_setting_right_pane">
+                            <div class="content-group">
+                                <div class="row mt16">
                             <label for="si_producto_no_tiene_codigo"/>
                             <div class="content-group">
                                  <field name="si_producto_no_tiene_codigo" class="o_light_label mt16" widget="radio"/>
+                            </div>
+                                </div>
                             </div>
                         </div>
                         <div class="o_setting_left_pane">
@@ -54,6 +66,26 @@
                                 <div class="row mt16">
                                     <label for="download_type" class="col-md-3 o_light_label"/>
                                     <field name="download_type"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_setting_left_pane">
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <div class="content-group">
+                                <div class="row mt16">
+                                    <label for="tipo_conciliacion" class="col-md-3 o_light_label"/>
+                                    <field name="tipo_conciliacion"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_setting_left_pane">
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <div class="content-group">
+                                <div class="row mt16">
+                                    <label for="rango" class="col-md-3 o_light_label"/>
+                                    <field name="rango"/>
                                 </div>
                             </div>
                         </div>

@@ -19,6 +19,7 @@
     'data':         [
                     'security/ir.model.access.csv',
                     'security/l10n_mx_edi_esignature.xml',
+                    'security/security.xml',
                     'data/cron_data.xml',
                     
                     'views/ir_attachment_view.xml',
@@ -26,7 +27,8 @@
                     # 'views/templates.xml',
                     'views/res_company_view.xml',
                     'views/esignature_view.xml',
-                    
+                    'views/solicitud_ws.xml',
+
                     'wizard/cfdi_invoice.xml',
                     'wizard/import_invoice_process_message.xml',
                     'wizard/reconcile_vendor_cfdi_xml_bill.xml',

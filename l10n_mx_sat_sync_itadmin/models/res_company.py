@@ -70,6 +70,23 @@ class ResCompany(models.Model):
         return True
 
     @api.model
+    def verifica_solicitud_descarga(self):
+        for company in self.search([('l10n_mx_esignature_ids', '!=', False)]):
+            if self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.download_type') == 'API':
+               solicitud_ws_ids = self.env['solicitud.ws'].search([('cod_estatus','=', '5000'), ('state','=', 'draft'), ('company_id','=', company.id)])
+               if solicitud_ws_ids:
+                   for solicitud_ws in solicitud_ws_ids:
+                       esignature_ids = company.l10n_mx_esignature_ids
+                       esignature = esignature_ids.with_user(self.env.user).get_valid_certificate()
+                       if not esignature:
+                          raise UserError(_("No valid E-Signature found."))
+                       sat_obj = SAT(esignature.content, esignature.key, esignature.password)
+                       solicitud = {'id_solicitud': solicitud_ws.id_solicitud, 'cod_estatus': solicitud_ws.cod_estatus, 'mensaje': solicitud_ws.mensaje}
+                       company.save_downloaded_content(esignature, sat_obj, solicitud, solicitud_ws.rfc_emisor)
+
+        return True
+
+    @api.model
     def import_current_company_invoice(self):
         if self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.download_type') == 'API':
            self.env.company.with_user(self.env.user).download_cfdi_invoices_api()
@@ -177,54 +194,85 @@ class ResCompany(models.Model):
             raise UserError(_("No valid E-Signature found."))
 
         sat_obj = SAT(esignature.content, esignature.key, esignature.password)
+
+        # Recibidos -- Supplier
         token = sat_obj.soap_generate_token(sat_obj.certificate, sat_obj.private_key)
-        solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_receptor=True)
-        res = self.save_downloaded_content(esignature, sat_obj, solicitud, False)
-        if not res:
-            time.sleep(2)
-            # Emitidos -- customer
-            solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_emisor=True)
-            self.save_downloaded_content(esignature, sat_obj, solicitud, True)
+
+        solicitud_ws_ids = self.env['solicitud.ws'].search([('fecha_inicio','=', date_from.date()), ('fecha_fin','=', date_to.date()), ('rfc_receptor','=', True),
+                                                            ('state','=', 'draft'), ('company_id', '=', self.id)], limit=1)
+        if not solicitud_ws_ids:
+           solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_receptor=True)
+           solicitud_ws_ids = self.env['solicitud.ws'].create({'id_solicitud': solicitud['id_solicitud'],
+                                                               'cod_estatus': solicitud['cod_estatus'],
+                                                               'mensaje': solicitud['mensaje'],
+                                                               'fecha_inicio': date_from,
+                                                               'fecha_fin': date_to,
+                                                               'fecha': datetime.today().date(),
+                                                               'company_id': self.id,
+                                                               'rfc_receptor': True})
+        else:
+           solicitud = {'id_solicitud': solicitud_ws_ids.id_solicitud, 'cod_estatus': solicitud_ws_ids.cod_estatus, 'mensaje': solicitud_ws_ids.mensaje}
+
+        self.save_downloaded_content(esignature, sat_obj, solicitud, False)
+
+        solo_documentos_de_proveedor = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin_ee.solo_documentos_de_proveedor')
+        if not solo_documentos_de_proveedor:
+           time.sleep(2)
+           # Emitidos -- customer
+           solicitud_ws_ids = self.env['solicitud.ws'].search([('fecha_inicio','=', date_from.date()), ('fecha_fin','=', date_to.date()), ('rfc_emisor','=', True),
+                                                               ('state','=', 'draft'), ('company_id', '=', self.id)], limit=1)
+           if not solicitud_ws_ids:
+                   solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_emisor=True)
+                   solicitud_ws_ids = self.env['solicitud.ws'].create({'id_solicitud': solicitud['id_solicitud'],
+                                                                  'cod_estatus': solicitud['cod_estatus'],
+                                                                  'mensaje': solicitud['mensaje'],
+                                                                  'fecha_inicio': date_from,
+                                                                  'fecha_fin': date_to,
+                                                                  'fecha': datetime.today().date(),
+                                                                  'company_id': self.id,
+                                                                  'rfc_emisor': True})
+           else:
+                   solicitud = {'id_solicitud': solicitud_ws_ids.id_solicitud, 'cod_estatus': solicitud_ws_ids.cod_estatus, 'mensaje': solicitud_ws_ids.mensaje}
+           self.save_downloaded_content(esignature, sat_obj, solicitud, True)
 
         self.last_cfdi_fetch_date = datetime.now()
         return
 
     def save_downloaded_content(self, esignature, sat_obj, solicitud, customer_documents):
         content = []
-        for _ in range(10):
-            token = sat_obj.soap_generate_token(sat_obj.certificate, sat_obj.private_key)
-            verificacion = sat_obj.soap_verify_package(esignature.holder_vat, solicitud['id_solicitud'], token)
-            #_logger.info(f'\n >>> SOLICITUD: {verificacion}')
-            estado_solicitud = int(verificacion['estado_solicitud'])
-            # 0, Token invalido.
-            # 1, Aceptada
-            # 2, En proceso
-            # 3, Terminada
-            # 4, Error
-            # 5, Rechazada
-            # 6, Vencida
-            if estado_solicitud <= 2:
-                # Si el estado de solicitud esta Aceptado o en proceso el programa espera
-                # 60 segundos y vuelve a tratar de verificar
-                time.sleep(30)
-                continue
-            elif estado_solicitud >= 4:
-                message = f"{ERROR_TYPE[estado_solicitud]} - {verificacion['mensaje']}"
-                #_logger.info(f"\n >>> {message}")
-                self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
-                                             {'title': "Error", 'message': message, 'sticky': False, 'warning': True})
-                break
-            else:
-                # Si el estatus es 3 se trata de descargar los paquetes
+#        for _ in range(10):
+        token = sat_obj.soap_generate_token(sat_obj.certificate, sat_obj.private_key)
+        verificacion = sat_obj.soap_verify_package(esignature.holder_vat, solicitud['id_solicitud'], token)
+        estado_solicitud = int(verificacion['estado_solicitud'])
+        # 0, Token invalido.
+        # 1, Aceptada
+        # 2, En proceso
+        # 3, Terminada
+        # 4, Error
+        # 5, Rechazada
+        # 6, Vencida
+
+        solicitud_ws = self.env['solicitud.ws'].search([('id_solicitud','=', solicitud['id_solicitud'])], limit=1)
+        solicitud_ws.write({'cod_verifica': verificacion['codigo_estado_solicitud'],
+                            'estado_solicitud': verificacion['estado_solicitud'],
+                            'mensaje_ver': verificacion['mensaje']})
+        # Si el estatus es 3 se trata de descargar los paquetes
+        if estado_solicitud == 3:
                 for paquete in verificacion['paquetes']:
                     descarga = sat_obj.soap_download_package(esignature.holder_vat, paquete, token)
                     content.append(descarga['paquete_b64'])
-                break
+                solicitud_ws.write({'state':'done'})
+        elif estado_solicitud >= 4 or estado_solicitud == 0:
+                solicitud_ws.write({'state':'cancel'})
+        if solicitud_ws.fecha:
+           if datetime.today().date() > solicitud_ws.fecha + timedelta(days=3):
+               solicitud_ws.write({'state':'cancel'})
+
         if not content:
             return True
-        attachment_obj = self.env['ir.attachment'].sudo()
-        invoice_obj = self.env['account.move'].sudo()
-        payment_obj = self.env['account.payment'].sudo()
+        attachment_obj = self.env['ir.attachment']
+        invoice_obj = self.env['account.move']
+        payment_obj = self.env['account.payment']
         NSMAP = {
             'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
             'cfdi': 'http://www.sat.gob.mx/cfd/3',
@@ -405,10 +453,10 @@ class ResCompany(models.Model):
         session.get('https://cfdiau.sat.gob.mx/')
 
         if not esignature:
-            raise Warning("Archivos incorrectos no son una FIEL.")
+            raise UserError("Archivos incorrectos no son una FIEL.")
 
         if not esignature.content or not esignature.key or not esignature.password:
-            raise Warning("Seleccine los archivos FIEL .cer o FIEL .pem.")
+            raise UserError("Seleccine los archivos FIEL .cer o FIEL .pem.")
 
         fiel_cert_data = base64.b64decode(esignature.content)
         fiel_pem_data = convert_key_cer_to_pem(base64.decodebytes(esignature.key), esignature.password.encode('UTF-8'))
@@ -440,7 +488,11 @@ class ResCompany(models.Model):
                 break
         invoice_content_receptor, invoice_content_emisor = {}, {}
         if sat and sat.is_connect:
-            invoice_content_receptor, invoice_content_emisor = sat.search(opt)
+            solo_documentos_de_proveedor = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin_ee.solo_documentos_de_proveedor')
+            if solo_documentos_de_proveedor:
+                invoice_content_receptor, invoice_content_emisor = sat.search(opt, 'supplier')
+            else:
+                invoice_content_receptor, invoice_content_emisor = sat.search(opt)
             sat.logout()
         elif sat:
             sat.logout()
@@ -468,7 +520,9 @@ class ResCompany(models.Model):
                 if b'xmlns:schemaLocation' in xml_content:
                     xml_content = xml_content.replace(b'xmlns:schemaLocation', b'xsi:schemaLocation')
                 elif b'Ya no puedes descargar' in xml_content:
-                    _logger.info('Ya no puedes descargar más documentos. Por seguridad únicamente se permite descargar un máximo de 2,000 archivos por día.')
+                    self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
+                                             {'title': "Error", 'message': 'Límite de descarga alcanzado', 'sticky': False, 'warning': True})
+                    _logger.info('Ya no puedes descargar más documentos. El SAT permite descargar un máximo de 2,000 archivos por día.')
                     continue
                 try:
                     tree = etree.fromstring(xml_content)

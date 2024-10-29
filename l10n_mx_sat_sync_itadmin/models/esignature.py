@@ -15,6 +15,7 @@ except ImportError:
     _logger.warning('OpenSSL library not found. If you plan to use l10n_mx_edi, please install the library from https://pypi.python.org/pypi/pyOpenSSL')
 
 from pytz import timezone
+import pytz
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import ValidationError, UserError
@@ -47,36 +48,36 @@ class Certificate(models.Model):
     _description = 'MX E-signature'
 
     content = fields.Binary(
-        string='Certificate',
-        help='Certificate in der format',
+        string='Certificado Cer',
+        help='Archivo Cer',
         required=True,)
     key = fields.Binary(
-        string='Certificate Key',
-        help='Certificate Key in der format',
+        string='Certificado Key',
+        help='Archivo Key',
         required=True,)
     password = fields.Char(
-        string='Certificate Password',
-        help='Password for the Certificate Key',
+        string='Contraseña del Certificado',
+        help='Contraseña del Certificado',
         required=True,)
     holder = fields.Char(
-        string='Holder',
-        help='Holder for the certificate',
+        string='Titular',
+        help='Titular del certificado',
         required=False,)
     holder_vat = fields.Char(
-        string="Holder's VAT",
-        help="Holder's Vat for the certificate",
+        string="RFC",
+        help="RFC del certificado",
         required=False,)
     serial_number = fields.Char(
-        string='Serial number',
+        string='Numero de serie',
         help='The serial number to add to electronic documents',
         readonly=True,
         index=True)
     date_start = fields.Datetime(
-        string='Available date',
+        string='Fecha inicio',
         help='The date on which the certificate starts to be valid',
         readonly=True)
     date_end = fields.Datetime(
-        string='Expiration date',
+        string='Fecha expiración',
         help='The date on which the certificate expires',
         readonly=True)
 
@@ -117,8 +118,14 @@ class Certificate(models.Model):
         '''
         mexican_dt = self.get_mx_current_datetime()
         for record in self:
-            date_start = str_to_datetime(record.date_start)
-            date_end = str_to_datetime(record.date_end)
+            timezone = self._context.get('tz')
+            if not timezone:
+               timezone = self.env.user.partner_id.tz or 'America/Mexico_City'
+
+            local = pytz.timezone(timezone)
+            date_start = record.date_start.replace(tzinfo=pytz.UTC).astimezone(local)
+            date_end = record.date_end.replace(tzinfo=pytz.UTC).astimezone(local)
+
             if date_start <= mexican_dt <= date_end:
                 return record
         return None
