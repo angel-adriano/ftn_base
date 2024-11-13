@@ -1,3 +1,29 @@
+v16.32
+-Agregar información de factura glboal en formato de factura
+
+v16.31
+-Solo mostrar boton "Validar y Generar REP" en pagos de clientes
+
+v16.30
+-Redondeos en impuestos locales
+
+v16.29
+-Corrección EquivalenciaDR en facturas y pagos multimoneda.
+-Factura con descuentos y promociones Odoo nativo
+
+v16.28
+-Revisa producto en linea de factura.
+
+v16.27
+-Corrección en calculo subtotal productos.
+-Correción en predial
+
+v16.26
+-Evita timbrar productos con costo en cero.
+
+v16.25
+-Mostrar clave y descripción en Método y forma de pago, régimen fiscal.
+
 v16.24
 -Leyenda cancelado en factura
 

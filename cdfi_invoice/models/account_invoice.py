@@ -315,10 +315,20 @@ class AccountMove(models.Model):
         tax_local_ret_tot = 0
         tax_local_tras_tot = 0
         only_exento = True
-        items = {'numerodepartidas': len(self.invoice_line_ids)}
         invoice_lines = []
+        negative_lines = []
         for line in self.invoice_line_ids:
-            if not line.product_id or line.display_type in ('line_section', 'line_note'):
+            if line.price_subtotal <= 0:
+              negative_lines.append(abs(line.price_subtotal))
+
+        for line in self.invoice_line_ids:
+            if line.display_type in ('line_section', 'line_note'):
+                continue
+            if not line.product_id:
+                self.write({'proceso_timbrado': False})
+                self.env.cr.commit()
+                raise UserError(_('Hay una línea sin producto.'))
+            if line.price_unit <= 0:
                 continue
 
             if not line.product_id.clave_producto:
@@ -328,10 +338,25 @@ class AccountMove(models.Model):
             if not line.product_id.cat_unidad_medida.clave:
                 self.write({'proceso_timbrado': False})
                 self.env.cr.commit()
-                raise UserError(
-                    _('El producto %s no tiene unidad de medida del SAT configurado.') % (line.product_id.name))
+                raise UserError(_('El producto %s no tiene unidad de medida del SAT configurado.') % (line.product_id.name))
+            promo = 0
+            promocion = False
 
-            price_wo_discount = line.price_unit * (1 - (line.discount / 100.0))
+            if negative_lines:
+               pos = 0
+               for promo_disc in negative_lines:
+                  if promo_disc  <= line.price_subtotal:
+                      #price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
+                      price_wo_discount = round(line.price_unit - (promo_disc / line.quantity), no_decimales_prod)
+                      promo = promo_disc
+                      promocion = True
+                      negative_lines.pop(pos)
+                      break
+                  else:
+                      price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
+                  pos += 1
+            else:
+               price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
 
             taxes_prod = line.tax_ids.compute_all(price_wo_discount, line.currency_id, line.quantity,
                                                   product=line.product_id, partner=line.move_id.partner_id)
@@ -421,9 +446,12 @@ class AccountMove(models.Model):
                tax_tras = []
                tax_ret = []
 
-            total_wo_discount = round(line.price_unit * line.quantity - tax_included, no_decimales_prod)
-            discount_prod = round(total_wo_discount - line.price_subtotal, no_decimales_prod) if line.discount else 0
-            precio_unitario = round(total_wo_discount / line.quantity, no_decimales_prod)
+            total_wo_discount = self.roundTraditional(line.price_unit * line.quantity - tax_included, no_decimales_prod)
+            if promocion:
+               discount_prod = self.roundTraditional((line.price_unit * line.quantity - tax_included) - (line.price_subtotal - promo), no_decimales_prod) if line.discount or promo > 0 else 0
+            else:
+               discount_prod = self.roundTraditional((line.price_unit * line.quantity - tax_included) - line.price_subtotal, no_decimales_prod) if line.discount else 0
+            precio_unitario = self.roundTraditional((line.price_unit * line.quantity - tax_included) / line.quantity, no_decimales_prod)
             self.subtotal += total_wo_discount
             self.discount += discount_prod
 
@@ -438,6 +466,12 @@ class AccountMove(models.Model):
                     pedimentos.append({'NumeroPedimento': pedimento[0:2] + '  ' + pedimento[2:4] + '  ' + pedimento[
                                                                                                           4:8] + '  ' + pedimento[
                                                                                                                         8:]})
+
+            no_predial = []
+            if line.predial:
+                predial_list = line.predial.replace(' ', '').split(',')
+                for predial in predial_list:
+                    no_predial.append({'NumeroPredial': predial})
 
             terceros = {}
             if self.tercero_id:
@@ -457,7 +491,6 @@ class AccountMove(models.Model):
             if line.product_id.objetoimp:
                 objetoimp = line.product_id.objetoimp
             else:
-                _logger.info('taxes_prod %s', taxes_prod)
                 if taxes_prod['taxes']:
                   if tax_tras or tax_ret:
                      objetoimp = '02'
@@ -497,7 +530,7 @@ class AccountMove(models.Model):
                                       'Descuento': self.set_decimals(discount_prod, no_decimales_prod),
                                       'ObjetoImp': objetoimp,
                                       'InformacionAduanera': pedimentos and pedimentos or '',
-                                      'predial': line.predial and line.predial or '',
+                                      'no_predial': no_predial and no_predial or '',
                                       'terceros': terceros and terceros or '',
                                       'parte': components and components or '',})
 
@@ -547,18 +580,16 @@ class AccountMove(models.Model):
         tax_local_ret_tot = round(tax_local_ret_tot, no_decimales)
         if tax_local_ret or tax_local_tras:
             if tax_local_tras and not tax_local_ret:
-                request_params.update({'implocal10': {'TotaldeTraslados': self.roundTraditional(tax_local_tras_tot, 2),
-                                                      'TotaldeRetenciones': self.roundTraditional(tax_local_ret_tot, 2),
+                request_params.update({'implocal10': {'TotaldeTraslados': self.set_decimals(tax_local_tras_tot, 2),
+                                                      'TotaldeRetenciones': self.set_decimals(tax_local_ret_tot, 2),
                                                       'TrasladosLocales': tax_local_tras, }})
             if tax_local_ret and not tax_local_tras:
-                request_params.update({'implocal10': {'TotaldeTraslados': self.roundTraditional(tax_local_tras_tot, 2),
-                                                      'TotaldeRetenciones': self.roundTraditional(tax_local_ret_tot * -1,
-                                                                                              2),
+                request_params.update({'implocal10': {'TotaldeTraslados': self.set_decimals(tax_local_tras_tot, 2),
+                                                      'TotaldeRetenciones': self.set_decimals(tax_local_ret_tot * -1, 2),
                                                       'RetencionesLocales': tax_local_ret, }})
             if tax_local_ret and tax_local_tras:
-                request_params.update({'implocal10': {'TotaldeTraslados': self.roundTraditional(tax_local_tras_tot, 2),
-                                                      'TotaldeRetenciones': self.roundTraditional(tax_local_ret_tot * -1,
-                                                                                              2),
+                request_params.update({'implocal10': {'TotaldeTraslados': self.set_decimals(tax_local_tras_tot, 2),
+                                                      'TotaldeRetenciones': self.set_decimals(tax_local_ret_tot * -1, 2),
                                                       'TrasladosLocales': tax_local_tras,
                                                       'RetencionesLocales': tax_local_ret, }})
 

@@ -19,16 +19,16 @@
 
         <xpath expr="//div[hasclass('row')]//div[@name='address_not_same_as_shipping']//t[@t-set='address']" position="inside">
             <p name="fiscal_regime">
-                Regimen fiscal: <span t-field="o.partner_id.regimen_fiscal_id.code"/>
+                Regimen fiscal: <span t-field="o.partner_id.regimen_fiscal_id.code"/> - <span t-field="o.partner_id.regimen_fiscal_id.description"/>
             </p>
         </xpath>
         <xpath expr="//div[hasclass('row')]//div[@name='address_same_as_shipping']//t[@t-set='address']" position="inside">
             <p name="fiscal_regime">
-                Regimen fiscal: <span t-field="o.partner_id.regimen_fiscal_id.code"/>
+                Regimen fiscal: <span t-field="o.partner_id.regimen_fiscal_id.code"/> - <span t-field="o.partner_id.regimen_fiscal_id.description"/>
             </p>        </xpath>
         <xpath expr="//div[hasclass('row')]//div[@name='no_shipping']//t[@t-set='address']" position="inside">
             <p name="fiscal_regime">
-                Regimen fiscal: <span t-field="o.partner_id.regimen_fiscal_id.code"/>
+                Regimen fiscal: <span t-field="o.partner_id.regimen_fiscal_id.code"/> - <span t-field="o.partner_id.regimen_fiscal_id.description"/>
             </p>
         </xpath>
 
@@ -39,12 +39,12 @@
 
                 <div t-att-class="o_grid_layout">
                     <strong>Uso:</strong>
-                    <p class="m-0" t-field="o.uso_cfdi_id.code"/>
+                    <p class="m-0" t-field="o.uso_cfdi_id.code"/> - <span t-field="o.uso_cfdi_id.description"/>
                 </div>
 
                 <div t-att-class="o_grid_layout" t-if="o.forma_pago_id">
                     <strong>Forma de pago:</strong>
-                    <p class="m-0" t-field="o.forma_pago_id.code"/>
+                    <p class="m-0" t-field="o.forma_pago_id.code"/> - <span t-field="o.forma_pago_id.description"/>
                 </div>
 
                 <div t-att-class="o_grid_layout" t-if="o.methodo_pago">
@@ -109,7 +109,7 @@
                     <div class="digital-stamp-content">
                         <span>Nombre emisor:</span> <span t-field="o.company_id.nombre_fiscal"/>
                         <span> | RFC Emisor:</span> <span t-field="o.company_id.vat"/>
-                        <span> | Regimen fiscal:</span> <span t-field="o.company_id.regimen_fiscal_id.code"/>
+                        <span> | Regimen fiscal:</span> <span t-field="o.company_id.regimen_fiscal_id.code"/> - <span t-field="o.company_id.regimen_fiscal_id.description"/>
                         <span> | Lugar de expedición::</span> 
                                 <t t-if="o.journal_id.codigo_postal">
                                     <span t-field="o.journal_id.codigo_postal"/>
@@ -129,6 +129,18 @@
                         <span> | Tipo de cambio:</span> <span t-field="o.tipocambio" />
                         <span> | Folio fiscal:</span> <span t-field="o.folio_fiscal" />
                     </div>
+
+                    <t t-if="o.factura_global">
+                       <div>
+                           <span><strong>Factura global</strong></span>
+                       </div>
+                       <div>
+                           <span>Periodicidad:</span> <span t-field="o.fg_periodicidad" />
+                           <span> | Mes:</span> <span t-field="o.fg_meses" />
+                           <span> | Año:</span> <span t-field="o.fg_ano" />
+                       </div>
+                    </t>
+
                 </div>
 
            <br/>

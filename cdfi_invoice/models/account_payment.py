@@ -71,7 +71,7 @@ class AccountPayment(models.Model):
     cuenta_beneficiario = fields.Char(_("Cuenta beneficiario"), compute='_compute_banco_receptor')
     rfc_banco_receptor = fields.Char(_("RFC banco receptor"), compute='_compute_banco_receptor')
     estado_pago = fields.Selection(
-        selection=[('pago_no_enviado', 'REP no generado'), ('pago_correcto', 'REP correcto'), 
+        selection=[('pago_no_enviado', 'REP no generado'), ('pago_correcto', 'REP correcto'),
                    ('problemas_factura', 'Problemas con el pago'), ('solicitud_cancelar', 'Cancelación en proceso'),
                    ('cancelar_rechazo', 'Cancelación rechazada'), ('factura_cancelada', 'REP cancelado'), ],
         string=_('Estado CFDI'),
@@ -79,7 +79,7 @@ class AccountPayment(models.Model):
         readonly=True
     )
     tipo_relacion = fields.Selection(
-        selection=[('04', 'Sustitución de los CFDI previos'),],
+        selection=[('04', 'Sustitución de los CFDI previos'), ],
         string=_('Tipo relación'),
     )
     uuid_relacionado = fields.Char(string=_('CFDI Relacionado'))
@@ -99,7 +99,7 @@ class AccountPayment(models.Model):
   #  version = fields.Char(string=_('Version'))
     number_folio = fields.Char(string=_('Folio'), compute='_get_number_folio')
     amount_to_text = fields.Char('Amount to Text', compute='_get_amount_to_text',
-                                 size=256, 
+                                 size=256,
                                  help='Amount of the invoice in letter')
     qr_value = fields.Char(string=_('QR Code Value'))
     qrcode_image = fields.Binary("QRCode")
@@ -109,13 +109,13 @@ class AccountPayment(models.Model):
     payment_mail_ids = fields.One2many('account.payment.mail', 'payment_id', string='Payment Mails')
     iddocumento = fields.Char(string=_('iddocumento'))
     fecha_emision = fields.Char(string=_('Fecha y Hora Certificación'))
-    docto_relacionados = fields.Text("Docto relacionados",default='[]')
+    docto_relacionados = fields.Text("Docto relacionados", default='[]')
     cep_sello = fields.Char(string=_('cep_sello'))
     cep_numeroCertificado = fields.Char(string=_('cep_numeroCertificado'))
     cep_cadenaCDA = fields.Char(string=_('cep_cadenaCDA'))
     cep_claveSPEI = fields.Char(string=_('cep_claveSPEI'))
-    retencionesp = fields.Text("traslados P",default='[]')
-    trasladosp = fields.Text("retenciones P",default='[]')
+    retencionesp = fields.Text("traslados P", default='[]')
+    trasladosp = fields.Text("retenciones P", default='[]')
     total_pago = fields.Float("Total pagado")
     partials_payment_ids = fields.One2many('facturas.pago', 'doc_id', 'Montos')
     manual_partials = fields.Boolean("Montos manuales")
@@ -125,10 +125,10 @@ class AccountPayment(models.Model):
     def _get_number_folio(self):
         for record in self:
             if record.name:
-                record.number_folio = record.name.replace('CUST.IN','').replace('/','')
+                record.number_folio = record.name.replace('CUST.IN', '').replace('/', '')
 
     @api.model
-    def get_docto_relacionados(self,payment):
+    def get_docto_relacionados(self, payment):
         try:
             data = json.loads(payment.docto_relacionados)
         except Exception:
@@ -159,7 +159,7 @@ class AccountPayment(models.Model):
             'type': 'ir.actions.act_window',
             'target': 'new',
         }
-        
+
     @api.onchange('journal_id')
     def _onchange_journal(self):
         if self.journal_id:
@@ -293,13 +293,17 @@ class AccountPayment(models.Model):
                   rate_payment_curr_mxn = payment.currency_id._convert(1.0, mxn_currency, payment.company_id, payment.date, round=False)
                   paid_amount_comp_curr = payment.currency_id.round(payment.amount * rate_payment_curr_mxn)
 
-               for field1, field2 in (('debit', 'credit'), ('credit', 'debit')):
-                  for partial in pay_rec_lines[f'matched_{field1}_ids']:
-                      payment_line = partial[f'{field2}_move_id']
-                      invoice_line = partial[f'{field1}_move_id']
-                      invoice_amount = partial[f'{field1}_amount_currency']
+               for match_field in ('credit', 'debit'):
+                  for partial in pay_rec_lines[f'matched_{match_field}_ids']:
+                      payment_line = partial[f'{match_field}_move_id']
+                      invoice_line = partial[f'{match_field}_move_id']
+                      invoice_amount = partial[f'{match_field}_amount_currency']
                       invoice = invoice_line.move_id
                       decimal_p = 2
+
+                      exchange_amount = 0
+                      for exchange in partial.exchange_move_id:
+                           exchange_amount += exchange.amount_total
 
                       if partial.amount == 0:
                           raise UserError("Una factura adjunta en el pago no tiene un monto liquidado por el pago. \nRevisa que todas las facturas tengan un monto pagado, puede ser necesario desvincular las facturas y vinculalas en otro orden.")
@@ -312,19 +316,19 @@ class AccountPayment(models.Model):
                       if invoice.total_factura <= 0:
                           raise UserError("No hay monto total de la factura. Carga el XML en la factura para agregar el monto total.")
 
-                      if invoice.currency_id == payment_line.currency_id:
+                      if invoice.currency_id == payment.currency_id:
                           amount_paid_invoice_curr = invoice_amount
                           equivalenciadr = 1
-                      elif invoice.currency_id == mxn_currency and invoice.currency_id != payment_line.currency_id:
+                      elif invoice.currency_id == mxn_currency and invoice.currency_id != payment.currency_id:
                           amount_paid_invoice_curr = invoice_amount
-                          amount_paid_invoice_comp_curr = payment_line.company_currency_id.round(payment.amount  * (abs(payment_line.balance) / paid_amount_comp_curr))
-                          invoice_rate = partial.debit_amount_currency / partial.amount
+                          amount_paid_invoice_comp_curr = payment_line.company_currency_id.round(payment.amount * (abs(payment_line.balance) / (paid_amount_comp_curr + exchange_amount)))
+                          invoice_rate = partial.debit_amount_currency / (partial.amount  + exchange_amount)
                           exchange_rate = amount_paid_invoice_curr / amount_paid_invoice_comp_curr
                           equivalenciadr = payment.roundTraditional(exchange_rate, 6) + 0.000001
                       else:
                           amount_paid_invoice_curr = invoice_amount
-                          exchange_rate = partial.debit_amount_currency / partial.amount
-                          equivalenciadr = payment.roundTraditional(exchange_rate, 6) + 0.000001
+                          exchange_rate = partial.debit_amount_currency / (partial.amount  + exchange_amount)
+                          equivalenciadr = payment.roundTraditional(exchange_rate, 6)# + 0.000001
                       paid_pct = float_round(amount_paid_invoice_curr, precision_digits=6, rounding_method='UP') / invoice.total_factura
 
                       if not invoice.tax_payment:
@@ -452,11 +456,11 @@ class AccountPayment(models.Model):
     def _get_amount_to_text(self):
         for record in self:
             record.amount_to_text = amount_to_text_es_MX.get_amount_to_text(record, record.amount_total, 'es_cheque', record.currency_id.name)
-        
+
     @api.model
     def _get_amount_2_text(self, amount_total):
         return amount_to_text_es_MX.get_amount_to_text(self, amount_total, 'es_cheque', self.currency_id.name)
-            
+
     @api.model
     def to_json(self):
         if self.partner_id.vat == 'XAXX010101000' or self.partner_id.vat == 'XEXX010101000':
@@ -484,13 +488,13 @@ class AccountPayment(models.Model):
             local = pytz.timezone(timezone)
             naive_from = self.fecha_pago
             local_dt_from = naive_from.replace(tzinfo=pytz.UTC).astimezone(local)
-            date_from = local_dt_from.strftime ("%Y-%m-%dT%H:%M:%S")
+            date_from = local_dt_from.strftime("%Y-%m-%dT%H:%M:%S")
         self.add_resitual_amounts()
 
         #corregir hora
         local2 = pytz.timezone(timezone)
         if not self.date_payment:
-            naive_from2 = datetime.now() 
+            naive_from2 = datetime.now()
         else:
             naive_from2 = self.date_payment
         local_dt_from2 = naive_from2.replace(tzinfo=pytz.UTC).astimezone(local2)
@@ -683,8 +687,8 @@ class AccountPayment(models.Model):
                 raise UserError(_('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
             try:
-                response = requests.post(url ,
-                                     auth=None,verify=False, data=json.dumps(values), 
+                response = requests.post(url,
+                                     auth=None,verify=False, data=json.dumps(values),
                                      headers={"Content-type": "application/json"})
             except Exception as e:
                 error = str(e)
@@ -752,7 +756,7 @@ class AccountPayment(models.Model):
         self.selo_digital_cdfi = TimbreFiscalDigital.attrib['SelloCFD']
         self.selo_sat = TimbreFiscalDigital.attrib['SelloSAT']
         self.folio_fiscal = TimbreFiscalDigital.attrib['UUID']
-        self.folio = xml_data.attrib['Folio']     
+        self.folio = xml_data.attrib['Folio']
         version = TimbreFiscalDigital.attrib['Version']
         self.cadena_origenal = '||%s|%s|%s|%s|%s||' % (version, self.folio_fiscal, self.fecha_certificacion, 
                                                          self.selo_digital_cdfi, self.cetificaso_sat)
