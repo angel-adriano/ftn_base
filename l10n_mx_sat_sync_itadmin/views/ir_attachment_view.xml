@@ -10,6 +10,10 @@
                 <field name="cfdi_uuid"/>
                 <field name="nombre_tercero"/>
             </field>
+            <xpath expr="//filter[@name='binary_filter']" position="after">
+                <filter name="pending" string="Por conciliar" domain="[('creado_en_odoo', '!=', True)]"/>
+                <filter name="done" string="Concliado" domain="[('creado_en_odoo', '=', True)]"/>
+            </xpath>
         </field>
     </record>
 

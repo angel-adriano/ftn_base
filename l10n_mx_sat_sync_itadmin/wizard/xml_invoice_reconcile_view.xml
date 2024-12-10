@@ -10,7 +10,7 @@
                     <field name="folio_factura" readonly="1"/>
                     <field name="client_rfc" invisible="1"/>
                     <field name="invoice_type" invisible="1"/>
-                    <field name="invoice_id" required="1" domain="[('move_type','=', invoice_type),('partner_id.vat', '=', client_rfc)]"/>
+                    <field name="invoice_id" required="1" domain="[('move_type','=', invoice_type),('partner_id.vat', '=', client_rfc), ('estado_factura', '=', 'factura_no_generada')]"/>
                     <field name="date" readonly="1"/>
                     <field name="client_name" readonly="1"/>
                     <field name="amount" readonly="1"/>
