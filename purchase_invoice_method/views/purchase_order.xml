@@ -11,6 +11,9 @@
             <field name="invoice_status" position="before">
                 <field name="invoice_method" />
             </field>
+            <xpath expr="//field[@name='picking_type_id']" position="after">
+                <field name="advance_purchase" widget="boolean_toggle"/>
+            </xpath>
         </field>
     </record>
 
