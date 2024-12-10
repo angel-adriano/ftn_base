@@ -1,0 +1,36 @@
+<odoo>
+    <data>
+        <record id="res_config_auto_invoice_service" model="ir.ui.view">
+            <field name="name">res.config.settings.inherit</field>
+            <field name="model">res.config.settings</field>
+		    <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+            <field name="arch" type="xml">
+
+            <xpath expr="//div[@id='three_way_matching']" position="after">
+				<div class="col-12 col-lg-6 o_setting_box" title="This adds a rule to create vendor invoice on service receipt">
+					<div class="o_setting_left_pane">
+						<field name="auto_invoice_on_service"/>
+					</div>
+					<div class="o_setting_right_pane">
+						<label for="auto_invoice_on_service"/>
+						<div class="text-muted">
+                        </div>
+					</div>
+				</div>
+			</xpath>
+            </field>
+        </record>
+
+        <record id="view_purchase_order_form_receive_wizard" model="ir.ui.view">
+        <field name="name">purchase.order.form.receive.wizard</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='button_confirm']" position="after">
+                <button name="action_open_receive_wizard" type="object" string="Receive Services" class="btn-primary" attrs="{'invisible': ['|',('delivery_status', 'not in', ['to_receive', 'partial']), ('state', '!=', 'purchase')]} "/>
+            </xpath>
+        </field>
+    </record>
+
+    </data>
+</odoo>

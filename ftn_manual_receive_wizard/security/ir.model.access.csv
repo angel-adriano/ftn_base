@@ -1,0 +1,3 @@
+"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
+"access_receive_purchase_order_lines","access_receive_purchase_order_lines","model_receive_purchase_order_lines","purchase.group_purchase_user",1,1,1,1
+"access_receive_purchase_order_line_wizard","access_receive_purchase_order_line_wizard","model_receive_purchase_order_line_wizard","purchase.group_purchase_user",1,1,1,1

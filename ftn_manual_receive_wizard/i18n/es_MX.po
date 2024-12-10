@@ -1,0 +1,151 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ftn_manual_receive_wizard
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0+e-20240711\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-11-11 19:20+0000\n"
+"PO-Revision-Date: 2024-11-11 19:20+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__qty_received
+msgid "Already Received"
+msgstr "Recibido"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_res_company__auto_invoice_on_service
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_res_config_settings__auto_invoice_on_service
+msgid "Auto Invoice Service Receipt"
+msgstr "Factura Automática de Recepción de Servicios"
+
+#. module: ftn_manual_receive_wizard
+#: model_terms:ir.ui.view,arch_db:ftn_manual_receive_wizard.view_receive_purchase_order_lines_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model,name:ftn_manual_receive_wizard.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model,name:ftn_manual_receive_wizard.model_res_config_settings
+msgid "Config Settings"
+msgstr "Configuración"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__create_uid
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__create_date
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__display_name
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__display_name
+msgid "Display Name"
+msgstr "Nombre para Mostrar"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__id
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__id
+msgid "ID"
+msgstr "ID"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard____last_update
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines____last_update
+msgid "Last Modified on"
+msgstr "Última Modificación el"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__write_uid
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__write_uid
+msgid "Last Updated by"
+msgstr "Actualizado por"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__write_date
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__write_date
+msgid "Last Updated on"
+msgstr "Actualizado el"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__line_ids
+msgid "Order Lines"
+msgstr "Líneas de Pedido"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__qty_ordered
+msgid "Ordered Quantity"
+msgstr "Cantidad Pedida"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__product_id
+msgid "Product"
+msgstr "Producto"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model,name:ftn_manual_receive_wizard.model_purchase_order
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_lines__purchase_order_id
+msgid "Purchase Order"
+msgstr "Orden de Compra"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__purchase_order_line_id
+msgid "Purchase Order Line"
+msgstr "Línea de Orden de Compra"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__qty_to_receive
+msgid "Quantity to Receive"
+msgstr "Cantidad a Recibir"
+
+#. module: ftn_manual_receive_wizard
+#: model_terms:ir.ui.view,arch_db:ftn_manual_receive_wizard.view_receive_purchase_order_lines_form
+msgid "Receive"
+msgstr "Recibir"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model,name:ftn_manual_receive_wizard.model_receive_purchase_order_line_wizard
+msgid "Receive Purchase Order Line Wizard"
+msgstr "Asistente de Línea de Recepción de Orden de Compra"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model,name:ftn_manual_receive_wizard.model_receive_purchase_order_lines
+#: model_terms:ir.ui.view,arch_db:ftn_manual_receive_wizard.view_receive_purchase_order_lines_form
+msgid "Receive Purchase Order Lines"
+msgstr "Recibir Líneas de Orden de Compra"
+
+#. module: ftn_manual_receive_wizard
+#: model_terms:ir.ui.view,arch_db:ftn_manual_receive_wizard.view_purchase_order_form_receive_wizard
+msgid "Receive Services"
+msgstr "Recibir Servicios"
+
+#. module: ftn_manual_receive_wizard
+#: model_terms:ir.ui.view,arch_db:ftn_manual_receive_wizard.res_config_auto_invoice_service
+msgid "This adds a rule to create vendor invoice on service receipt"
+msgstr "Esto añade una regla para crear la factura del proveedor al recibir un servicio"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__product_uom
+msgid "Unit of Measure"
+msgstr "Unidad de Medida"
+
+#. module: ftn_manual_receive_wizard
+#: model:ir.model.fields,field_description:ftn_manual_receive_wizard.field_receive_purchase_order_line_wizard__wizard_id
+msgid "Wizard"
+msgstr "Asistente"
