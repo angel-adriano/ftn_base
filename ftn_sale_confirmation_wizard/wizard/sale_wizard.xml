@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_sale_order_wizard_form" model="ir.ui.view">
+        <field name="name">sale.order.wizard.form</field>
+        <field name="model">sale.order.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Confirm Sale Order">
+                <group>
+                    <field name="purchase_order"/>
+                    <field name="project_name"/>
+                    <field name="analytic_account_id"/>
+                    <field name="attachment_name" invisible="1"/>
+                    <field name="attachment_pdf" filename="attachment_name"/>
+                </group>
+                <footer>
+                    <button string="Confirm" type="object" name="action_apply" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

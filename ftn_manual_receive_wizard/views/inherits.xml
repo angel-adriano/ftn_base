@@ -27,7 +27,8 @@
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//button[@name='button_confirm']" position="after">
-                <button name="action_open_receive_wizard" type="object" string="Receive Services" class="btn-primary" attrs="{'invisible': ['|',('delivery_status', 'not in', ['to_receive', 'partial']), ('state', '!=', 'purchase')]} "/>
+                <field name="has_service" invisible="1"/>
+                <button name="action_open_receive_wizard" type="object" string="Receive Services" class="btn-primary" attrs="{'invisible': ['|', '|', ('has_service', '=', False), ('delivery_status', 'not in', ['to_receive', 'partial']), ('state', '!=', 'purchase')]}"/>
             </xpath>
         </field>
     </record>
