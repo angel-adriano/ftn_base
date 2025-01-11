@@ -1,0 +1,7 @@
+<odoo>
+    <!-- Define a new security group -->
+    <record id="group_data_migration_manager" model="res.groups">
+        <field name="name">Data Migration Manager</field>
+        <field name="category_id" ref="base.module_category_tools"/>
+    </record>
+</odoo>

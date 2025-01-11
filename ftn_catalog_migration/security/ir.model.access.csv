@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_retrieve_categories_wizard,retrieve.categories.wizard,model_retrieve_categories_wizard,base.group_system,1,1,1,1
+access_import_categories_wizard,import.categories.wizard,model_import_categories_wizard,base.group_system,1,1,1,1
+access_migration_category,migration.category,model_migration_category,base.group_system,1,1,1,1

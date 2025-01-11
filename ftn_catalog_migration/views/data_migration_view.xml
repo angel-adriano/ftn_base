@@ -1,0 +1,109 @@
+<odoo>
+
+    <record id="view_retrieve_categories_form" model="ir.ui.view">
+        <field name="name">retrieve.categories.form</field>
+        <field name="model">retrieve.categories.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Retrieve Categories from Odoo 14">
+                <sheet>
+                    <footer>
+                        <button string="Retrieve Categories" type="object" name="retrieve_categories" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <!-- Form View for Import Categories Wizard -->
+    <record id="view_import_categories_form" model="ir.ui.view">
+        <field name="name">import.categories.wizard.form</field>
+        <field name="model">import.categories.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Selected Categories">
+                <sheet>
+                    <footer>
+                        <button string="Import Products" type="object" name="import_categories" class="btn-primary"/>
+                        <button string="Import BOMS" type="object" name="import_boms" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- List View for Migration Categories -->
+    <record id="view_migration_category_list" model="ir.ui.view">
+        <field name="name">migration.category.list</field>
+        <field name="model">migration.category</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="Migration Categories" editable="bottom" edit="1">
+                <field name="name"/>
+                <field name="product_count"/>
+                <field name="external_id"/>
+                <field name="selected"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action for Import Categories Wizard -->
+    <record id="action_retrieve_categories" model="ir.actions.act_window">
+        <field name="name">Retrieve Categories</field>
+        <field name="res_model">retrieve.categories.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Action for Migration Categories -->
+    <record id="action_migration_categories" model="ir.actions.act_window">
+        <field name="name">List Categories</field>
+        <field name="res_model">migration.category</field>
+        <field name="view_mode">list</field>
+        <field name="target">current</field>
+    </record>
+
+    <record id="action_import_categories" model="ir.actions.act_window">
+        <field name="name">Import Categories</field>
+        <field name="res_model">import.categories.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menu Entries -->
+    <menuitem id="menu_data_migration_root" name="Data Migration" sequence="10"/>
+    <menuitem id="menu_list_categories" parent="menu_data_migration_root" name="View Categories" action="action_migration_categories" sequence="20"/>
+    <menuitem id="menu_import_categories" parent="menu_data_migration_root" name="Import Products" action="action_import_categories" sequence="30"/>
+    <menuitem id="menu_retrieve_categories" parent="menu_data_migration_root" name="Retrieve Categories" action="action_retrieve_categories" sequence="40"/>
+
+
+    <record id="view_res_config_settings_migration" model="ir.ui.view">
+        <field name="name">res.config.settings.migration</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='integration']" position="after">
+                <div class="settings-block">
+                    <h2>Odoo 14 Connection Settings</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="content-group mt16">
+                            <label for="odoo_14_url" class="o_light_label mr8"/>
+                            <field name="odoo_14_url"/>
+                        </div>
+                        <div class="content-group mt16">
+                            <label for="odoo_14_db" class="o_light_label mr8"/>
+                            <field name="odoo_14_db"/>
+                        </div>
+                        <div class="content-group mt16">
+                            <label for="odoo_14_username" class="o_light_label mr8"/>
+                            <field name="odoo_14_username"/>
+                        </div>
+                        <div class="content-group mt16">
+                            <label for="odoo_14_password" class="o_light_label mr8"/>
+                            <field name="odoo_14_password" password="True"/>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
