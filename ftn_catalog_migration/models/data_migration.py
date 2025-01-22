@@ -202,7 +202,6 @@ class ImportCategoriesWizard(models.TransientModel):
 
                 _logger.info("Assigned attributes to product template: %s", product_template.name)
 
-
     def import_boms(self):
         # Fetch credentials from res.config.settings
         Param = self.env['ir.config_parameter'].sudo()
@@ -232,11 +231,20 @@ class ImportCategoriesWizard(models.TransientModel):
         _logger.info("Retrieved %d BOMs from Odoo 14.", len(boms))
 
         for bom in boms:
-            # Determine whether the BOM is linked to a product or a template
             product = None
             if bom['product_id']:
                 product_name = bom['product_id'][1]
-                product = self.env['product.product'].search([('name', '=', product_name)], limit=1)
+                if ' (' in product_name:
+                    template_name, variant = product_name.rsplit(' (', 1)
+                    variant = variant.rstrip(')')
+                else:
+                    template_name, variant = product_name, ''
+                product_template = self.env['product.template'].search([('name', '=', template_name)], limit=1)
+                if product_template:
+                    product = self.env['product.product'].search([
+                        ('product_tmpl_id', '=', product_template.id),
+                        ('product_template_variant_value_ids.name', 'in', variant.split(', '))
+                    ], limit=1)
                 if not product:
                     _logger.warning("Product '%s' not found in Odoo 18. Skipping BOM.", product_name)
                     continue
@@ -246,9 +254,8 @@ class ImportCategoriesWizard(models.TransientModel):
                 if not product_template:
                     _logger.warning("Product template '%s' not found in Odoo 18. Skipping BOM.", product_tmpl_name)
                     continue
-                product = product_template.product_variant_id  # Default variant for the product template
+                product = product_template.product_variant_id
 
-            # Create BOM in Odoo 18
             new_bom = self.env['mrp.bom'].create({
                 'product_tmpl_id': product.product_tmpl_id.id,
                 'product_id': product.id,
@@ -256,33 +263,46 @@ class ImportCategoriesWizard(models.TransientModel):
                 'type': bom['type'],
             })
 
-            # Fetch BOM Lines from Odoo 14
             bom_lines = models_14.execute_kw(
                 odoo_14_db, uid, odoo_14_password, 'mrp.bom.line', 'search_read',
                 [[('id', 'in', bom['bom_line_ids'])]],
-                {'fields': ['product_id', 'product_qty', 'product_uom_id']}
+                {'fields': ['product_id', 'product_qty', 'product_uom_id', 'bom_product_template_attribute_value_ids']}
             )
 
             for bom_line in bom_lines:
-                # Map the product in the BOM line to Odoo 18
                 line_product_name = bom_line['product_id'][1]
-                line_product = self.env['product.product'].search([('name', '=', line_product_name)], limit=1)
+                if ' (' in line_product_name:
+                    line_template_name, line_variant = line_product_name.rsplit(' (', 1)
+                    line_variant = line_variant.rstrip(')')
+                    line_template = self.env['product.template'].search([('name', '=', line_template_name)], limit=1)
+                    line_product = self.env['product.product'].search([
+                        ('product_tmpl_id', '=', line_template.id),
+                        ('product_template_variant_value_ids.name', 'in', line_variant.split(', '))
+                    ], limit=1)
+                else:
+                    line_template_name, line_variant = line_product_name, ''
+                    line_template = self.env['product.template'].search([('name', '=', line_template_name)], limit=1)
+                    line_product = self.env['product.product'].search([
+                        ('product_tmpl_id', '=', line_template.id)
+                    ], limit=1)
 
                 if not line_product:
                     _logger.warning("BOM Line product '%s' not found in Odoo 18. Skipping line.", line_product_name)
                     continue
 
-                # Map unit of measure
                 uom_name = bom_line.get('product_uom_id', [None, None])[1]
                 uom_id = self.env['uom.uom'].search([('name', '=', uom_name)], limit=1).id
 
-                # Add BOM line linked to product.product
                 self.env['mrp.bom.line'].create({
                     'bom_id': new_bom.id,
                     'product_id': line_product.id,
                     'product_qty': bom_line['product_qty'],
                     'product_uom_id': uom_id,
+                    # 'bom_product_template_attribute_value_ids': [
+                    #     (6, 0, bom_line.get('bom_product_template_attribute_value_ids', []))],
                 })
 
             _logger.info("Created BOM for product: %s.", product.name)
+
+
 

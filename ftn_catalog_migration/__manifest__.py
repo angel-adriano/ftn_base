@@ -12,7 +12,7 @@
     # Check https://github.com/odoo/odoo/blob/14.0/odoo/addons/base/data/ir_module_category_data.xml
     # for the full list
     'category': 'Tools',
-    'depends': ['base', 'product', 'mrp', 'point_of_sale', 'cdfi_invoice'],
+    'depends': ['base', 'product', 'mrp', 'point_of_sale'],
     'data': [
         'security/data_migration_security.xml',
         'security/ir.model.access.csv',
