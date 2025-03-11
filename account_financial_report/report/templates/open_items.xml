@@ -248,17 +248,11 @@
                     </div>
                     <!--## amount_total_due_currency-->
                     <div class="act_as_cell amount">
-                        <span
-                            t-esc="line['amount_currency']"
-                            t-options="{'widget': 'monetary', 'display_currency': env['res.currency'].browse(line['currency_id'])}"
-                        />
+                        <span t-esc="line['amount_currency']" />
                     </div>
                     <!--## amount_residual_currency-->
                     <div class="act_as_cell amount">
-                        <span
-                            t-esc="line['amount_residual_currency']"
-                            t-options="{'widget': 'monetary', 'display_currency': env['res.currency'].browse(line['currency_id'])}"
-                        />
+                        <span t-esc="line['amount_residual_currency']" />
                     </div>
                 </t>
                 <t t-if="not line['currency_id']">

@@ -13,8 +13,14 @@ class AgedPartnerBalanceWizard(models.TransientModel):
     _description = "Aged Partner Balance Wizard"
     _inherit = "account_financial_report_abstract_wizard"
 
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        required=False,
+        string="Company",
+    )
     date_at = fields.Date(required=True, default=fields.Date.context_today)
-    date_from = fields.Date()
+    date_from = fields.Date(string="Date From")
     target_move = fields.Selection(
         [("posted", "All Posted Entries"), ("all", "All Entries")],
         string="Target Moves",
@@ -34,10 +40,12 @@ class AgedPartnerBalanceWizard(models.TransientModel):
 
     account_code_from = fields.Many2one(
         comodel_name="account.account",
+        string="Account Code From",
         help="Starting account in a range",
     )
     account_code_to = fields.Many2one(
         comodel_name="account.account",
+        string="Account Code To",
         help="Ending account in a range",
     )
 
@@ -53,8 +61,7 @@ class AgedPartnerBalanceWizard(models.TransientModel):
             end_range = int(self.account_code_to.code)
             self.account_ids = self.env["account.account"].search(
                 [
-                    ("code", ">=", start_range),
-                    ("code", "<=", end_range),
+                    ("code", "in", [x for x in range(start_range, end_range + 1)]),
                     ("reconcile", "=", True),
                 ]
             )
@@ -101,13 +108,11 @@ class AgedPartnerBalanceWizard(models.TransientModel):
         domain = [("company_id", "=", self.company_id.id)]
         if self.receivable_accounts_only or self.payable_accounts_only:
             if self.receivable_accounts_only and self.payable_accounts_only:
-                domain += [
-                    ("account_type", "in", ("asset_receivable", "liability_payable"))
-                ]
+                domain += [("internal_type", "in", ("receivable", "payable"))]
             elif self.receivable_accounts_only:
-                domain += [("account_type", "=", "asset_receivable")]
+                domain += [("internal_type", "=", "receivable")]
             elif self.payable_accounts_only:
-                domain += [("account_type", "=", "liability_payable")]
+                domain += [("internal_type", "=", "payable")]
             self.account_ids = self.env["account.account"].search(domain)
         else:
             self.account_ids = None
@@ -127,6 +132,21 @@ class AgedPartnerBalanceWizard(models.TransientModel):
             )
             .report_action(self, data=data)
         )
+
+    def button_export_html(self):
+        self.ensure_one()
+        report_type = "qweb-html"
+        return self._export(report_type)
+
+    def button_export_pdf(self):
+        self.ensure_one()
+        report_type = "qweb-pdf"
+        return self._export(report_type)
+
+    def button_export_xlsx(self):
+        self.ensure_one()
+        report_type = "xlsx"
+        return self._export(report_type)
 
     def _prepare_report_aged_partner_balance(self):
         self.ensure_one()

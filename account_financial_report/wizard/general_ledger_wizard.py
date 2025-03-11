@@ -22,6 +22,12 @@ class GeneralLedgerReportWizard(models.TransientModel):
     _description = "General Ledger Report Wizard"
     _inherit = "account_financial_report_abstract_wizard"
 
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        required=False,
+        string="Company",
+    )
     date_range_id = fields.Many2one(comodel_name="date.range", string="Date range")
     date_from = fields.Date(required=True, default=lambda self: self._init_date_from())
     date_to = fields.Date(required=True, default=fields.Date.context_today)
@@ -43,12 +49,18 @@ class GeneralLedgerReportWizard(models.TransientModel):
         "If partners are filtered, "
         "debits and credits totals will not match the trial balance.",
     )
+    show_analytic_tags = fields.Boolean(
+        string="Show analytic tags",
+    )
     receivable_accounts_only = fields.Boolean()
     payable_accounts_only = fields.Boolean()
     partner_ids = fields.Many2many(
         comodel_name="res.partner",
         string="Filter partners",
         default=lambda self: self._default_partners(),
+    )
+    analytic_tag_ids = fields.Many2many(
+        comodel_name="account.analytic.tag", string="Filter analytic tags"
     )
     account_journal_ids = fields.Many2many(
         comodel_name="account.journal", string="Filter journals"
@@ -57,7 +69,9 @@ class GeneralLedgerReportWizard(models.TransientModel):
         comodel_name="account.analytic.account", string="Filter cost centers"
     )
 
-    not_only_one_unaffected_earnings_account = fields.Boolean(readonly=True)
+    not_only_one_unaffected_earnings_account = fields.Boolean(
+        readonly=True, string="Not only one unaffected earnings account"
+    )
     foreign_currency = fields.Boolean(
         string="Show foreign currency",
         help="Display foreign currency for move lines, unless "
@@ -67,15 +81,17 @@ class GeneralLedgerReportWizard(models.TransientModel):
     )
     account_code_from = fields.Many2one(
         comodel_name="account.account",
+        string="Account Code From",
         help="Starting account in a range",
     )
     account_code_to = fields.Many2one(
         comodel_name="account.account",
+        string="Account Code To",
         help="Ending account in a range",
     )
-    grouped_by = fields.Selection(
-        selection=[("", "None"), ("partners", "Partners"), ("taxes", "Taxes")],
-        default="partners",
+    show_partner_details = fields.Boolean(
+        string="Show Partner Details",
+        default=True,
     )
     show_cost_center = fields.Boolean(
         string="Show Analytic Account",
@@ -102,7 +118,7 @@ class GeneralLedgerReportWizard(models.TransientModel):
             start_range = int(self.account_code_from.code)
             end_range = int(self.account_code_to.code)
             self.account_ids = self.env["account.account"].search(
-                [("code", ">=", start_range), ("code", "<=", end_range)]
+                [("code", "in", [x for x in range(start_range, end_range + 1)])]
             )
             if self.company_id:
                 self.account_ids = self.account_ids.filtered(
@@ -112,9 +128,8 @@ class GeneralLedgerReportWizard(models.TransientModel):
     def _init_date_from(self):
         """set start date to begin of current year if fiscal year running"""
         today = fields.Date.context_today(self)
-        company = self.company_id or self.env.company
-        last_fsc_month = company.fiscalyear_last_month
-        last_fsc_day = company.fiscalyear_last_day
+        last_fsc_month = self.env.user.company_id.fiscalyear_last_month
+        last_fsc_day = self.env.user.company_id.fiscalyear_last_day
 
         if (
             today.month < int(last_fsc_month)
@@ -144,9 +159,10 @@ class GeneralLedgerReportWizard(models.TransientModel):
     @api.onchange("company_id")
     def onchange_company_id(self):
         """Handle company change."""
+        account_type = self.env.ref("account.data_unaffected_earnings")
         count = self.env["account.account"].search_count(
             [
-                ("account_type", "=", "equity_unaffected"),
+                ("user_type_id", "=", account_type.id),
                 ("company_id", "=", self.company_id.id),
             ]
         )
@@ -231,13 +247,11 @@ class GeneralLedgerReportWizard(models.TransientModel):
         if self.receivable_accounts_only or self.payable_accounts_only:
             domain = [("company_id", "=", self.company_id.id)]
             if self.receivable_accounts_only and self.payable_accounts_only:
-                domain += [
-                    ("account_type", "in", ("asset_receivable", "liability_payable"))
-                ]
+                domain += [("internal_type", "in", ("receivable", "payable"))]
             elif self.receivable_accounts_only:
-                domain += [("account_type", "=", "asset_receivable")]
+                domain += [("internal_type", "=", "receivable")]
             elif self.payable_accounts_only:
-                domain += [("account_type", "=", "liability_payable")]
+                domain += [("internal_type", "=", "payable")]
             self.account_ids = self.env["account.account"].search(domain)
         else:
             self.account_ids = None
@@ -252,10 +266,11 @@ class GeneralLedgerReportWizard(models.TransientModel):
 
     @api.depends("company_id")
     def _compute_unaffected_earnings_account(self):
+        account_type = self.env.ref("account.data_unaffected_earnings")
         for record in self:
             record.unaffected_earnings_account = self.env["account.account"].search(
                 [
-                    ("account_type", "=", "equity_unaffected"),
+                    ("user_type_id", "=", account_type.id),
                     ("company_id", "=", record.company_id.id),
                 ]
             )
@@ -282,6 +297,21 @@ class GeneralLedgerReportWizard(models.TransientModel):
             .report_action(self, data=data)
         )
 
+    def button_export_html(self):
+        self.ensure_one()
+        report_type = "qweb-html"
+        return self._export(report_type)
+
+    def button_export_pdf(self):
+        self.ensure_one()
+        report_type = "qweb-pdf"
+        return self._export(report_type)
+
+    def button_export_xlsx(self):
+        self.ensure_one()
+        report_type = "xlsx"
+        return self._export(report_type)
+
     def _prepare_report_general_ledger(self):
         self.ensure_one()
         return {
@@ -291,12 +321,14 @@ class GeneralLedgerReportWizard(models.TransientModel):
             "only_posted_moves": self.target_move == "posted",
             "hide_account_at_0": self.hide_account_at_0,
             "foreign_currency": self.foreign_currency,
+            "show_analytic_tags": self.show_analytic_tags,
             "company_id": self.company_id.id,
             "account_ids": self.account_ids.ids,
             "partner_ids": self.partner_ids.ids,
-            "grouped_by": self.grouped_by,
+            "show_partner_details": self.show_partner_details,
             "cost_center_ids": self.cost_center_ids.ids,
             "show_cost_center": self.show_cost_center,
+            "analytic_tag_ids": self.analytic_tag_ids.ids,
             "journal_ids": self.account_journal_ids.ids,
             "centralize": self.centralize,
             "fy_start_date": self.fy_start_date,

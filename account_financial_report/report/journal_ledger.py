@@ -49,8 +49,6 @@ class JournalLedgerReport(models.AbstractModel):
         ]
         if wizard.move_target != "all":
             domain += [("state", "=", wizard.move_target)]
-        else:
-            domain += [("state", "in", ["posted", "draft"])]
         return domain
 
     def _get_moves_order(self, wizard, journal_ids):
@@ -81,22 +79,16 @@ class JournalLedgerReport(models.AbstractModel):
         return moves.ids, Moves, move_data
 
     def _get_move_lines_domain(self, move_ids, wizard, journal_ids):
-        return [
-            ("display_type", "not in", ["line_note", "line_section"]),
-            ("move_id", "in", move_ids),
-        ]
+        return [("display_type", "=", False), ("move_id", "in", move_ids)]
 
     def _get_move_lines_order(self, move_ids, wizard, journal_ids):
-        """Add `move_id` to make sure the order of the records is correct
-        (especially if we use auto-sequence).
-        """
-        return "move_id"
+        return ""
 
-    def _get_move_lines_data(self, ml, wizard, ml_taxes, auto_sequence, exigible):
+    def _get_move_lines_data(self, ml, wizard, ml_taxes, auto_sequence):
         base_debit = (
             base_credit
         ) = tax_debit = tax_credit = base_balance = tax_balance = 0.0
-        if exigible:
+        if ml.tax_exigible:
             base_debit = ml_taxes and ml.debit or 0.0
             base_credit = ml_taxes and ml.credit or 0.0
             base_balance = ml_taxes and ml.balance or 0.0
@@ -137,7 +129,7 @@ class JournalLedgerReport(models.AbstractModel):
         return {
             "name": account.name,
             "code": account.code,
-            "account_type": account.account_type,
+            "internal_type": account.internal_type,
         }
 
     def _get_partner_data(self, partners):
@@ -185,10 +177,6 @@ class JournalLedgerReport(models.AbstractModel):
             self._get_move_lines_domain(move_ids, wizard, journal_ids),
             order=self._get_move_lines_order(move_ids, wizard, journal_ids),
         )
-        move_lines_exigible = self.env["account.move.line"].search(
-            self._get_move_lines_domain(move_ids, wizard, journal_ids)
-            + self.env["account.move.line"]._get_tax_exigible_domain(),
-        )
         move_line_ids_taxes_data = {}
         if move_lines:
             # Get the taxes ids for the move lines
@@ -231,9 +219,8 @@ class JournalLedgerReport(models.AbstractModel):
                 and move_line_ids_taxes_data[ml.id]
                 or {}
             )
-            exigible = ml in move_lines_exigible
             Move_Lines[ml.move_id.id].append(
-                self._get_move_lines_data(ml, wizard, taxes, auto_sequence, exigible)
+                self._get_move_lines_data(ml, wizard, taxes, auto_sequence)
             )
         account_ids_data = self._get_account_data(accounts)
         partner_ids_data = self._get_partner_data(partners)

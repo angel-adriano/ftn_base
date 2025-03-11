@@ -172,9 +172,7 @@
     </template>
     <template id="account_financial_report.report_journal_ledger_journal_first_line">
         <div class="act_as_row lines">
-            <t t-if="with_auto_sequence">
-                <div class="act_as_cell" name="Sequence" />
-            </t>
+            <div class="act_as_cell" name="Sequence" />
             <div class="act_as_cell" name="entry" />
             <div class="act_as_cell" name="date" />
             <div class="act_as_cell" name="account" />
@@ -306,7 +304,10 @@
                 </t>
             </div>
             <div class="act_as_cell amount" name="amount_currency">
-                <t t-if="move_line['amount_currency']">
+                <t
+                    t-if="move_line['amount_currency']"
+                    t-options="{'widget': 'float', 'precision': 2}"
+                >
                     <span
                         t-esc="move_line['amount_currency']"
                         t-options="{'widget': 'float', 'precision': 2}"

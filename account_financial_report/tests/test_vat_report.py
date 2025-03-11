@@ -6,13 +6,11 @@ import time
 from datetime import date
 
 from odoo import fields
-from odoo.tests import tagged
 from odoo.tests.common import Form
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 
-@tagged("post_install", "-at_install")
 class TestVATReport(AccountTestInvoicingCommon):
     @classmethod
     def init_invoice(
@@ -30,6 +28,7 @@ class TestVATReport(AccountTestInvoicingCommon):
         )
         move_form.invoice_date = invoice_date or fields.Date.from_string("2019-01-01")
         move_form.partner_id = partner or cls.partner_a
+        move_form.name = name or "Test"
         lines = lines or []
         for line in lines:
             with move_form.invoice_line_ids.new() as line_form:
@@ -60,9 +59,9 @@ class TestVATReport(AccountTestInvoicingCommon):
             [
                 ("company_id", "=", cls.company.id),
                 (
-                    "account_type",
+                    "user_type_id",
                     "=",
-                    "liability_non_current",
+                    cls.env.ref("account.data_account_type_non_current_liabilities").id,
                 ),
             ],
             limit=1,
