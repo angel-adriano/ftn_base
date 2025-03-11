@@ -75,7 +75,9 @@ class AbstractReportXslx(models.AbstractModel):
                 {"bold": True, "border": True, "bg_color": "#FFFFCC"}
             ),
             "format_amount": workbook.add_format(),
-            "format_amount_bold": workbook.add_format({"bold": True}),
+            "format_amount_bold": workbook.add_format({"bold": True}).set_num_format(
+                "#,##0." + "0" * currency_id.decimal_places
+            ),
             "format_percent_bold_italic": workbook.add_format(
                 {"bold": True, "italic": True}
             ),
@@ -87,9 +89,6 @@ class AbstractReportXslx(models.AbstractModel):
             "#,##0." + "0" * currency_id.decimal_places
         )
         report_data["formats"]["format_percent_bold_italic"].set_num_format("#,##0.00%")
-        report_data["formats"]["format_amount_bold"].set_num_format(
-            "#,##0." + "0" * currency_id.decimal_places
-        )
 
     def _set_column_width(self, report_data):
         """Set width for all defined columns.
@@ -238,8 +237,27 @@ class AbstractReportXslx(models.AbstractModel):
         for col_pos, column in report_data["columns"].items():
             value = line_dict.get(column["field"], False)
             cell_type = column.get("type", "string")
+            # We will use a special cell type according to the currency of
+            # record and the company's currency:
+            # - If the currency is the same as the company's currency, we will leave
+            # the value empty.
+            # - If the currency is different from the company's currency, we will
+            # show the value.
+            if cell_type == "amount_different_company_currency":
+                if line_dict.get("currency_id") and line_dict.get(
+                    "company_currency_id"
+                ):
+                    if line_dict["currency_id"] == line_dict["company_currency_id"]:
+                        value = ""
+                        cell_type = "string"
+                    else:
+                        cell_type = "amount_currency"
+            # All conditions according to cell type.
             if cell_type == "string":
-                if line_dict.get("type", "") == "group_type":
+                if (
+                    line_dict.get("account_group_id", False)
+                    and line_dict["account_group_id"]
+                ):
                     report_data["sheet"].write_string(
                         report_data["row_pos"],
                         col_pos,
@@ -282,8 +300,6 @@ class AbstractReportXslx(models.AbstractModel):
                     value or "",
                     report_data["formats"]["format_right"],
                 )
-            else:
-                self.write_non_standard_column(cell_type, col_pos, value)
         report_data["row_pos"] += 1
 
     def write_initial_balance(self, my_object, label, report_data):
@@ -532,10 +548,7 @@ class AbstractReportXslx(models.AbstractModel):
             format_amt = report_data["formats"]["format_amount"]
             field_prefix = "format_amount"
         if "currency_id" in line_object and line_object.get("currency_id", False):
-            if isinstance(line_object["currency_id"], int):
-                currency = self.env["res.currency"].browse(line_object["currency_id"])
-            else:
-                currency = line_object["currency_id"]
+            currency = line_object["currency_id"]
             field_name = "{}_{}".format(field_prefix, currency.name)
             if hasattr(self, field_name):
                 format_amt = getattr(self, field_name)
@@ -688,11 +701,5 @@ class AbstractReportXslx(models.AbstractModel):
     def _get_col_pos_final_balance_label(self):
         """
         :return: the columns position used for final balance label.
-        """
-        raise NotImplementedError()
-
-    def write_non_standard_column(self, cell_type, col_pos, value):
-        """
-        Write columns out of the columns type defined here.
         """
         raise NotImplementedError()

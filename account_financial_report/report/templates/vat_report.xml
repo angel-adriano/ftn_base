@@ -106,8 +106,7 @@
                                         t-set="domain"
                                         t-value="[('tax_ids', 'in', tax['id']),
                                                 ('date', '&gt;=', date_from),
-                                                ('date', '&lt;=', date_to),
-                                                ('tax_exigible', '=', True)]"
+                                                ('date', '&lt;=', date_to)]+request.env['account.move.line']._get_tax_exigible_domain()"
                                     />
                                     <span
                                         t-att-domain="domain"
@@ -125,8 +124,7 @@
                                         t-set="domain"
                                         t-value="[('tax_line_id', '=', tax['id']),
                                                 ('date', '&gt;=', date_from),
-                                                ('date', '&lt;=', date_to),
-                                                ('tax_exigible', '=', True)]"
+                                                ('date', '&lt;=', date_to)]+request.env['account.move.line']._get_tax_exigible_domain()"
                                     />
                                     <span
                                         t-att-domain="domain"
@@ -155,10 +153,10 @@
             </div>
             <div class="act_as_row">
                 <div class="act_as_cell">
-                    <span t-esc="date_from" t-options="{'widget': 'date'}" />
+                    <span t-esc="date_from" />
                 </div>
                 <div class="act_as_cell">
-                    <span t-esc="date_to" t-options="{'widget': 'date'}" />
+                    <span t-esc="date_to" />
                 </div>
                 <div class="act_as_cell">
                     <span t-esc="based_on" />

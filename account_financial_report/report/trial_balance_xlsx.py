@@ -60,12 +60,19 @@ class TrialBalanceXslx(models.AbstractModel):
             if report.foreign_currency:
                 foreign_currency = {
                     7: {
+                        "header": _("Cur."),
+                        "field": "currency_id",
+                        "field_currency_balance": "currency_id",
+                        "type": "many2one",
+                        "width": 7,
+                    },
+                    8: {
                         "header": _("Initial balance"),
                         "field": "initial_currency_balance",
                         "type": "amount_currency",
                         "width": 14,
                     },
-                    8: {
+                    9: {
                         "header": _("Ending balance"),
                         "field": "ending_currency_balance",
                         "type": "amount_currency",
@@ -111,12 +118,19 @@ class TrialBalanceXslx(models.AbstractModel):
             if report.foreign_currency:
                 foreign_currency = {
                     6: {
+                        "header": _("Cur."),
+                        "field": "currency_id",
+                        "field_currency_balance": "currency_id",
+                        "type": "many2one",
+                        "width": 7,
+                    },
+                    7: {
                         "header": _("Initial balance"),
                         "field": "initial_currency_balance",
                         "type": "amount_currency",
                         "width": 14,
                     },
-                    7: {
+                    8: {
                         "header": _("Ending balance"),
                         "field": "ending_currency_balance",
                         "type": "amount_currency",
@@ -130,7 +144,8 @@ class TrialBalanceXslx(models.AbstractModel):
         return [
             [
                 _("Date range filter"),
-                _("From: %s To: %s") % (report.date_from, report.date_to),
+                _("From: %(date_from)s To: %(date_to)s")
+                % ({"date_from": report.date_from, "date_to": report.date_to}),
             ],
             [
                 _("Target moves filter"),
@@ -148,7 +163,7 @@ class TrialBalanceXslx(models.AbstractModel):
             ],
             [
                 _("Limit hierarchy levels"),
-                _("Level %s" % report.show_hierarchy_level)
+                _("Level %s") % (report.show_hierarchy_level)
                 if report.limit_hierarchy_level
                 else _("No limit"),
             ],
@@ -181,15 +196,12 @@ class TrialBalanceXslx(models.AbstractModel):
         # For each account
         if not show_partner_details:
             for balance in trial_balance:
-                if show_hierarchy:
-                    if limit_hierarchy_level:
-                        if show_hierarchy_level > balance["level"] and (
-                            not hide_parent_hierarchy_level
-                            or (show_hierarchy_level - 1) == balance["level"]
-                        ):
-                            # Display account lines
-                            self.write_line_from_dict(balance, report_data)
-                    else:
+                if show_hierarchy and limit_hierarchy_level:
+                    if show_hierarchy_level > balance["level"] and (
+                        not hide_parent_hierarchy_level
+                        or (show_hierarchy_level - 1) == balance["level"]
+                    ):
+                        # Display account lines
                         self.write_line_from_dict(balance, report_data)
                 else:
                     self.write_line_from_dict(balance, report_data)
@@ -259,7 +271,7 @@ class TrialBalanceXslx(models.AbstractModel):
             line_object.currency_id = line_object.report_account_id.currency_id
         elif type_object == "account":
             line_object.currency_id = line_object.currency_id
-        super(TrialBalanceXslx, self).write_line(line_object, report_data)
+        return super(TrialBalanceXslx, self).write_line(line_object, report_data)
 
     def write_account_footer(self, account, name_value, report_data):
         """Specific function to write account footer for Trial Balance"""
