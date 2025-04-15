@@ -107,100 +107,113 @@ class ImportCategoriesWizard(models.TransientModel):
             raise UserError(_("No categories selected for import."))
 
         for category in selected_categories:
-            # Fetch all products for the category from Odoo 14
-            product_templates = models_14.execute_kw(
-                odoo_14_db, uid, odoo_14_password, 'product.template', 'search_read',
-                [[('categ_id.id', '=', category.external_id)]],
-                {
-                    'fields': ['name', 'default_code', 'type', 'categ_id', 'uom_id', 'uom_po_id', 'available_in_pos',
-                               'clave_producto', 'list_price', 'standard_price', 'image_1920', 'product_variant_ids',
-                               'attribute_line_ids']
-                }
-            )
+            _logger.info("Importing category: %s", category.name)
+            offset = 0
 
-            if not product_templates:
-                _logger.info("No products found for category '%s'", category.name)
-                continue
+            while True:
+                # Fetch product templates in batches (excluding image_1920)
+                product_templates = models_14.execute_kw(
+                    odoo_14_db, uid, odoo_14_password, 'product.template', 'search_read',
+                    [[('categ_id.id', '=', category.external_id)]],
+                    {
+                        'fields': [
+                            'id', 'name', 'default_code', 'type', 'categ_id',
+                            'uom_id', 'uom_po_id', 'available_in_pos',
+                            'clave_producto', 'list_price', 'standard_price',
+                            'product_variant_ids', 'attribute_line_ids'
+                        ],
+                        'limit': self.batch_size,
+                        'offset': offset,
+                    }
+                )
 
-            # Import products into Odoo 18
-            for template in product_templates:
-                _logger.info("Processing product: %s (Code: %s)", template['name'], template.get('default_code', 'N/A'))
+                if not product_templates:
+                    break
 
-                # Map category
-                categ_name = template.get('categ_id', [None, None])[1]
-                categ_id = self.env['product.category'].search([('name', '=', categ_name)], limit=1).id or \
-                           self.env['product.category'].create({'name': categ_name}).id
+                for template in product_templates:
+                    _logger.info("Processing product: %s", template['name'])
 
-                # Map unit of measure
-                uom_name = template.get('uom_id', [None, None])[1]
-                uom_id = self.env['uom.uom'].search([('name', '=', uom_name)], limit=1).id
+                    # Map category
+                    categ_name = template.get('categ_id', [None, None])[1]
+                    categ_id = self.env['product.category'].search([('name', '=', categ_name)], limit=1).id or \
+                               self.env['product.category'].create({'name': categ_name}).id
 
-                uom_po_name = template.get('uom_po_id', [None, None])[1]
-                uom_po_id = self.env['uom.uom'].search([('name', '=', uom_po_name)], limit=1).id
+                    # Map UoM
+                    uom_name = template.get('uom_id', [None, None])[1]
+                    uom_id = self.env['uom.uom'].search([('name', '=', uom_name)], limit=1).id
 
-                # Create product template in Odoo 18
-                product_template = self.env['product.template'].create({
-                    'name': template['name'],
-                    'default_code': template['default_code'],
-                    'type': 'consu',
-                    'is_storable': template['type'] == 'product',
-                    'categ_id': categ_id,
-                    'uom_id': uom_id,
-                    'uom_po_id': uom_po_id,
-                    'available_in_pos': template['available_in_pos'],
-                    'clave_producto': template['clave_producto'],
-                    'list_price': template['list_price'],
-                    'standard_price': template['standard_price'],
-                    'image_1920': template['image_1920'],
-                })
-                _logger.info("Created product template: %s", product_template.name)
+                    uom_po_name = template.get('uom_po_id', [None, None])[1]
+                    uom_po_id = self.env['uom.uom'].search([('name', '=', uom_po_name)], limit=1).id
 
-                # Assign attributes to the product template
-                attribute_lines = []
-                for attr_line_id in template['attribute_line_ids']:
-                    attr_line_data = models_14.execute_kw(
-                        odoo_14_db, uid, odoo_14_password, 'product.template.attribute.line', 'read',
-                        [attr_line_id],
-                        {'fields': ['attribute_id', 'value_ids']}
-                    )[0]
-                    attr_name = attr_line_data['attribute_id'][1]
+                    # Create product.template in Odoo 18
+                    product_template = self.env['product.template'].create({
+                        'name': template['name'],
+                        'default_code': template['default_code'],
+                        'type': 'consu',
+                        'is_storable': template['type'] == 'product',
+                        'categ_id': categ_id,
+                        'uom_id': uom_id,
+                        'uom_po_id': uom_po_id,
+                        'available_in_pos': template['available_in_pos'],
+                        'clave_producto': template['clave_producto'],
+                        'list_price': template['list_price'],
+                        'standard_price': template['standard_price'],
+                    })
 
-                    # Map attribute in Odoo 18
-                    attribute = self.env['product.attribute'].search([('name', '=', attr_name)], limit=1)
-                    if not attribute:
-                        attribute = self.env['product.attribute'].create({'name': attr_name})
+                    # Fetch image_1920 separately and write
+                    try:
+                        image_data = models_14.execute_kw(
+                            odoo_14_db, uid, odoo_14_password, 'product.template', 'read',
+                            [template['id']], {'fields': ['image_1920']}
+                        )[0].get('image_1920')
+                        if image_data:
+                            product_template.write({'image_1920': image_data})
+                    except Exception as img_err:
+                        _logger.warning("Failed to fetch image for product '%s': %s", template['name'], img_err)
 
-                    # Map attribute values
-                    value_ids = []
-                    for value_id in attr_line_data['value_ids']:
-                        value_data = models_14.execute_kw(
-                            odoo_14_db, uid, odoo_14_password, 'product.attribute.value', 'read',
-                            [value_id],
-                            {'fields': ['name']}
+                    # Assign attributes (generates variants automatically)
+                    attribute_lines = []
+                    for attr_line_id in template['attribute_line_ids']:
+                        attr_line_data = models_14.execute_kw(
+                            odoo_14_db, uid, odoo_14_password, 'product.template.attribute.line', 'read',
+                            [attr_line_id],
+                            {'fields': ['attribute_id', 'value_ids']}
                         )[0]
-                        value_name = value_data['name']
 
-                        attribute_value = self.env['product.attribute.value'].search([
-                            ('name', '=', value_name),
-                            ('attribute_id', '=', attribute.id)
-                        ], limit=1)
-                        if not attribute_value:
-                            attribute_value = self.env['product.attribute.value'].create({
-                                'name': value_name,
-                                'attribute_id': attribute.id,
-                            })
-                        value_ids.append(attribute_value.id)
+                        attr_name = attr_line_data['attribute_id'][1]
 
-                    # Add attribute line
-                    attribute_lines.append((0, 0, {
-                        'attribute_id': attribute.id,
-                        'value_ids': [(6, 0, value_ids)],
-                    }))
+                        attribute = self.env['product.attribute'].search([('name', '=', attr_name)], limit=1)
+                        if not attribute:
+                            attribute = self.env['product.attribute'].create({'name': attr_name})
 
-                if attribute_lines:
-                    product_template.write({'attribute_line_ids': attribute_lines})
+                        value_ids = []
+                        for value_id in attr_line_data['value_ids']:
+                            value_data = models_14.execute_kw(
+                                odoo_14_db, uid, odoo_14_password, 'product.attribute.value', 'read',
+                                [value_id], {'fields': ['name']}
+                            )[0]
+                            value_name = value_data['name']
 
-                _logger.info("Assigned attributes to product template: %s", product_template.name)
+                            attribute_value = self.env['product.attribute.value'].search([
+                                ('name', '=', value_name),
+                                ('attribute_id', '=', attribute.id)
+                            ], limit=1)
+                            if not attribute_value:
+                                attribute_value = self.env['product.attribute.value'].create({
+                                    'name': value_name,
+                                    'attribute_id': attribute.id,
+                                })
+                            value_ids.append(attribute_value.id)
+
+                        attribute_lines.append((0, 0, {
+                            'attribute_id': attribute.id,
+                            'value_ids': [(6, 0, value_ids)],
+                        }))
+
+                    if attribute_lines:
+                        product_template.write({'attribute_line_ids': attribute_lines})
+
+                offset += len(product_templates)
 
     def import_boms(self):
         # Fetch credentials from res.config.settings

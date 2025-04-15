@@ -21,6 +21,9 @@
         <field name="arch" type="xml">
             <form string="Import Selected Categories">
                 <sheet>
+                    <group>
+                        <field name="batch_size"/>
+                    </group>
                     <footer>
                         <button string="Import Products" type="object" name="import_categories" class="btn-primary"/>
                         <button string="Import BOMS" type="object" name="import_boms" class="btn-primary"/>
