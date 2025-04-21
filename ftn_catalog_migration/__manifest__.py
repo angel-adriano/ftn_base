@@ -17,6 +17,7 @@
         'security/data_migration_security.xml',
         'security/ir.model.access.csv',
         'views/data_migration_view.xml',
+        'views/inherits.xml',
     ],
     'installable': True,
     'application': False,

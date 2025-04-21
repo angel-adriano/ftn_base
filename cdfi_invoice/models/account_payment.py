@@ -71,7 +71,7 @@ class AccountPayment(models.Model):
     # monto_pagar = fields.Float("Monto a pagar", compute='_compute_monto_pagar')
     # saldo_restante = fields.Float("Saldo restante", readonly=True)
     fecha_pago = fields.Datetime("Fecha de pago")
-    date_payment = fields.Datetime("Fecha de CFDI")
+    date_payment = fields.Datetime("Fecha de CFDI", copy=False)
     cuenta_emisor = fields.Many2one('res.partner.bank', string=_('Cuenta del emisor'))
     banco_emisor = fields.Char("Banco del emisor", related='cuenta_emisor.bank_name', readonly=True)
     rfc_banco_emisor = fields.Char(_("RFC banco emisor"), related='cuenta_emisor.bank_bic', readonly=True)
@@ -85,7 +85,7 @@ class AccountPayment(models.Model):
                    ('cancelar_rechazo', 'Cancelación rechazada'), ('factura_cancelada', 'REP cancelado'), ],
         string=_('Estado CFDI'),
         default='pago_no_enviado',
-        readonly=True
+        readonly=True, copy=False
     )
     tipo_relacion = fields.Selection(
         selection=[('04', 'Sustitución de los CFDI previos'), ],
@@ -93,7 +93,7 @@ class AccountPayment(models.Model):
     )
     uuid_relacionado = fields.Char(string=_('CFDI Relacionado'))
     confirmacion = fields.Char(string=_('Confirmación'))
-    folio_fiscal = fields.Char(string=_('Folio Fiscal'), readonly=True)
+    folio_fiscal = fields.Char(string=_('Folio Fiscal'), readonly=True, copy=False)
     numero_cetificado = fields.Char(string=_('Numero de certificado'))
     cetificaso_sat = fields.Char(string=_('Cetificado SAT'))
     fecha_certificacion = fields.Char(string=_('Fecha y Hora Certificación'))
@@ -130,6 +130,30 @@ class AccountPayment(models.Model):
     manual_partials = fields.Boolean("Montos manuales")
     different_currency = fields.Boolean(_("Diferente moneda"), compute='_compute_different_currency')
     company_cfdi = fields.Boolean(related="company_id.company_cfdi", store=True)
+    redondeo_t_base = fields.Selection(
+        selection=[('01', _('Tradicional')),
+                   ('02', _('Decimal')),
+                   ('03', _('Techo')),
+                   ('04', _('Truncar')),],
+        default='01',
+        string=_('Redondeo base'), 
+    )
+    redondeo_t_impuesto = fields.Selection(
+        selection=[('01', _('Tradicional')),
+                   ('02', _('Decimal')),
+                   ('03', _('Techo')),
+                   ('04', _('Truncar')),],
+        default='01',
+        string=_('Redondeo impuesto'), 
+    )
+    redondeo_t_total = fields.Selection(
+        selection=[('01', _('Tradicional')),
+                   ('02', _('Decimal')),
+                   ('03', _('Techo')),
+                   ('04', _('Truncar')),],
+        default='01',
+        string=_('Redondeo total'), 
+    )
 
     @api.depends('name')
     def _get_number_folio(self):
@@ -286,9 +310,9 @@ class AccountPayment(models.Model):
                                 else:
                                     tax_grouped_ret[key]['ImporteP'] += importep
 
-                        if len(payment.partials_payment_ids) > 1 and payment.different_currency:
-                            if equivalenciadr == 1:
-                                equivalenciadr = payment.set_decimals(equivalenciadr, 10)
+                        #if len(payment.partials_payment_ids) > 1 and payment.different_currency:
+                        #    if equivalenciadr == 1:
+                        #        equivalenciadr = payment.set_decimals(equivalenciadr, 10)
                         docto_relacionados.append({
                             'MonedaDR': partial.facturas_id.moneda,
                             'EquivalenciaDR': equivalenciadr,
@@ -334,7 +358,10 @@ class AccountPayment(models.Model):
                             if not invoice.factura_cfdi:
                                 continue
 
-                            payment_content = invoice.invoice_payments_widget['content']
+                            payment_content = 0
+                            for widget_line in invoice.invoice_payments_widget['content']:
+                                if widget_line['is_exchange'] == False:
+                                   payment_content += 1 
 
                             if invoice.total_factura <= 0:
                                 raise UserError(
@@ -431,16 +458,16 @@ class AccountPayment(models.Model):
                                     else:
                                         tax_grouped_ret[key]['ImporteP'] += importep
 
-                            if len(payment.reconciled_invoice_ids) > 1 and payment.different_currency:
-                                if equivalenciadr == 1:
-                                    equivalenciadr = payment.set_decimals(equivalenciadr, 10)
+                            #if len(payment.reconciled_invoice_ids) > 1 and payment.different_currency:
+                            #    if equivalenciadr == 1:
+                            #        equivalenciadr = payment.set_decimals(equivalenciadr, 10)
 
                             docto_relacionados.append({
                                 'MonedaDR': invoice.moneda,
                                 'EquivalenciaDR': equivalenciadr,
                                 'IdDocumento': invoice.folio_fiscal,
                                 'folio_facura': invoice.number_folio,
-                                'NumParcialidad': len(payment_content),
+                                'NumParcialidad': payment_content,
                                 'ImpSaldoAnt': float_round(
                                     min(invoice.amount_residual + amount_paid_invoice_curr, invoice.amount_total),
                                     precision_digits=decimal_p, rounding_method='UP'),
@@ -575,10 +602,10 @@ class AccountPayment(models.Model):
                                       'BaseP': self.roundTraditional(line['BaseP'], 2),
                                       })
                     if line['ImpuestoP'] == '002' and line['TasaOCuotaP'] == '0.160000':
-                        totales.update({'TotalTrasladosBaseIVA16': self.roundTraditional(
-                            line['BaseP'] * float(self.tipocambiop), 2),
-                                        'TotalTrasladosImpuestoIVA16': self.roundTraditional(
-                                            line['ImporteP'] * float(self.tipocambiop), 2), })
+                        totales.update({'TotalTrasladosBaseIVA16': self.selectRoundseparate(
+                            line['BaseP'] * float(self.tipocambiop), 2, self.redondeo_t_base),
+                                        'TotalTrasladosImpuestoIVA16': self.selectRoundseparate(
+                                            line['ImporteP'] * float(self.tipocambiop),2, self.redondeo_t_impuesto),})
                     if line['ImpuestoP'] == '002' and line['TasaOCuotaP'] == '0.080000':
                         totales.update({'TotalTrasladosBaseIVA8': self.roundTraditional(
                             line['BaseP'] * float(self.tipocambiop), 2),
@@ -614,9 +641,9 @@ class AccountPayment(models.Model):
                             line['ImporteP'] * float(self.tipocambiop), 2), })
                     self.total_pago -= round(line['ImporteP'] * float(self.tipocambiop), 2)
                 impuestosp.update({'RetencionesP': retencionp})
-        totales.update({'MontoTotalPagos': self.set_decimals(self.amount,
-                                                             2) if self.monedap == 'MXN' else self.set_decimals(
-            self.amount * float(self.tipocambiop), 2), })
+        totales.update({'MontoTotalPagos': self.set_decimals(self.amount,2) 
+                                           if self.monedap == 'MXN' 
+                                           else self.selectRoundseparate(self.amount * float(self.tipocambiop), 2, self.redondeo_t_total), })
         # totales.update({'MontoTotalPagos': self.set_decimals(self.total_pago, 2),})
 
         pagos = []
@@ -669,8 +696,8 @@ class AccountPayment(models.Model):
                 'receptor': {
                     'nombre': self.partner_id.name.upper(),
                     'rfc': self.partner_id.vat.upper(),
-                    'ResidenciaFiscal': self.partner_id.residencia_fiscal,
-                    'NumRegIdTrib': self.partner_id.registro_tributario,
+                    'ResidenciaFiscal': self.partner_id.country_id.codigo_mx if self.partner_id.country_id.code != 'MX' else '',
+                    'NumRegIdTrib': self.partner_id.vat.upper() if self.partner_id.country_id.code != 'MX' else '',
                     'UsoCFDI': 'CP01',
                     'RegimenFiscalReceptor': self.partner_id.regimen_fiscal_id.code,
                     'DomicilioFiscalReceptor': zipreceptor,
@@ -727,10 +754,27 @@ class AccountPayment(models.Model):
         return '%.*f' % (precision, amount)
 
     def roundTraditional(self, val, digits):
-        if val != 0:
-            return round(val + 10 ** (-len(str(val)) - 1), digits)
-        else:
-            return 0
+       if val != 0:
+          return round(val + 10 ** (-len(str(val)) - 1), digits)
+       else:
+          return 0
+
+    def trunc(self, val, digits):
+       if val != 0:
+          x = 10 ** digits
+          return int(val*x)/(x)
+       else:
+          return 0
+
+    def selectRoundseparate(self, val, digits, r_option):
+       if r_option == '01':
+           return self.roundTraditional(val, digits)
+       elif r_option == '02':
+           return self.set_decimals(val, digits)
+       elif r_option == '03':
+           return math.ceil(val*100)/100
+       else:
+           return self.trunc(val, digits)
 
     def clean_text(self, text):
         clean_text = text.replace('\n', ' ').replace('\\', ' ').replace('-', ' ').replace('/', ' ').replace('|', ' ')
@@ -745,17 +789,15 @@ class AccountPayment(models.Model):
 
             values = p.to_json()
             if p.company_id.proveedor_timbrado == 'servidor':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/payment')
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/payment')
             elif p.company_id.proveedor_timbrado == 'servidor2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/payment')
-            elif p.company_id.proveedor_timbrado == 'servidor3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/payment')
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/payment')
             else:
                 raise UserError(_('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
             try:
                 response = requests.post(url,
-                                         auth=None, verify=False, data=json.dumps(values),
+                                         auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
             except Exception as e:
                 error = str(e)
@@ -778,7 +820,6 @@ class AccountPayment(models.Model):
                 p._set_data_from_xml(base64.b64decode(json_response['pago_xml']))
 
                 xml_file_name = p.name.replace('.', '').replace('/', '_') + '.xml'
-
                 attach = p.env['ir.attachment'].sudo().create(
                     {
                         'name': xml_file_name,
@@ -920,16 +961,14 @@ class AccountPayment(models.Model):
                 'foliosustitucion': p.env.context.get('foliosustitucion', ''),
             }
             if p.company_id.proveedor_timbrado == 'servidor':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/refund')
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/refund')
             elif p.company_id.proveedor_timbrado == 'servidor2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/refund')
-            elif p.company_id.proveedor_timbrado == 'servidor3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/refund')
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/refund')
             else:
                 raise UserError(_('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
             response = requests.post(url,
-                                     auth=None, verify=False, data=json.dumps(values),
+                                     auth=None, data=json.dumps(values),
                                      headers={"Content-type": "application/json"})
 
             json_response = response.json()

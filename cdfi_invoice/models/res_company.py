@@ -12,10 +12,9 @@ class ResCompany(models.Model):
     _inherit = 'res.company'
 
     proveedor_timbrado= fields.Selection(
-        selection=[('servidor', _('Servidor 1')),
-                   ('servidor2', _('Servidor 2')),
-                   ('servidor3', _('Servidor 3')),],
-        string=_('Proveedor de timbrado'), 
+        selection=[('servidor', _('Principal')),
+                   ('servidor2', _('Respaldo')),],
+        string=_('Servidor de timbrado'), default='servidor'
     )
     api_key = fields.Char(string=_('API Key'))
     modo_prueba = fields.Boolean(string=_('Modo prueba'))
@@ -81,6 +80,10 @@ class ResCompany(models.Model):
         return True
 
     def get_saldo(self):
+        if not self.vat:
+           raise UserError(_('Falta colocar el RFC'))
+        if not self.proveedor_timbrado:
+           raise UserError(_('Falta seleccionar el proveedor de timbrado'))
         values = {
                  'rfc': self.vat,
                  'api_key': self.proveedor_timbrado,
@@ -88,20 +91,20 @@ class ResCompany(models.Model):
                  }
         url=''
         if self.proveedor_timbrado == 'servidor':
-            url = '%s' % ('http://facturacion.itadmin.com.mx/api/saldo')
+            url = '%s' % ('https://facturacion.itadmin.com.mx/api/saldo')
 
         if not url:
             return
         try:
-            response = requests.post(url,auth=None,verify=False, data=json.dumps(values),headers={"Content-type": "application/json"})
+            response = requests.post(url,auth=None,data=json.dumps(values),headers={"Content-type": "application/json"})
             json_response = response.json()
         except Exception as e:
             print(e)
             json_response = {}
-    
+
         if not json_response:
             return
-        
+
         estado_factura = json_response['estado_saldo']
         if estado_factura == 'problemas_saldo':
             raise UserError(_(json_response['problemas_message']))
@@ -122,15 +125,13 @@ class ResCompany(models.Model):
                  }
         url=''
         if self.proveedor_timbrado == 'servidor':
-            url = '%s' % ('http://facturacion.itadmin.com.mx/api/validarcsd')
+            url = '%s' % ('https://facturacion.itadmin.com.mx/api/validarcsd')
         elif self.proveedor_timbrado == 'servidor2':
-            url = '%s' % ('http://facturacion2.itadmin.com.mx/api/validarcsd')
-        elif self.proveedor_timbrado == 'servidor3':
-            url = '%s' % ('http://facturacion3.itadmin.com.mx/api/validarcsd')
+            url = '%s' % ('https://facturacion2.itadmin.com.mx/api/validarcsd')
         if not url:
             return
         try:
-            response = requests.post(url,auth=None,verify=False, data=json.dumps(values),headers={"Content-type": "application/json"})
+            response = requests.post(url,auth=None,data=json.dumps(values),headers={"Content-type": "application/json"})
             json_response = response.json()
         except Exception as e:
             print(e)
@@ -157,15 +158,13 @@ class ResCompany(models.Model):
                  }
         url=''
         if self.proveedor_timbrado == 'servidor':
-            url = '%s' % ('http://facturacion.itadmin.com.mx/api/borrarcsd')
+            url = '%s' % ('https://facturacion.itadmin.com.mx/api/borrarcsd')
         elif self.proveedor_timbrado == 'servidor2':
-            url = '%s' % ('http://facturacion2.itadmin.com.mx/api/borrarcsd')
-        elif self.proveedor_timbrado == 'servidor3':
-            url = '%s' % ('http://facturacion3.itadmin.com.mx/api/borrarcsd')
+            url = '%s' % ('https://facturacion2.itadmin.com.mx/api/borrarcsd')
         if not url:
             return
         try:
-            response = requests.post(url,auth=None,verify=False, data=json.dumps(values),headers={"Content-type": "application/json"})
+            response = requests.post(url,auth=None,data=json.dumps(values),headers={"Content-type": "application/json"})
             json_response = response.json()
         except Exception as e:
             print(e)

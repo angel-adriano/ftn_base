@@ -2,3 +2,4 @@
 
 from . import settings
 from . import data_migration
+from . import inherits

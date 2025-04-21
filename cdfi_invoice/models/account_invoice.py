@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
-    factura_cfdi = fields.Boolean('Factura CFDI')
+    factura_cfdi = fields.Boolean('Factura CFDI', copy=False)
     tipo_comprobante = fields.Selection(
         selection=[('I', 'Ingreso'),
                    ('E', 'Egreso'),
@@ -44,17 +44,17 @@ class AccountMove(models.Model):
                    ('solicitud_rechazada', 'Cancelación rechazada'), ],
         string=_('Estado de factura'),
         default='factura_no_generada',
-        readonly=True
+        readonly=True, copy=False
     )
     pdf_cdfi_invoice = fields.Binary("CDFI Invoice")
-    qrcode_image = fields.Binary("QRCode")
-    numero_cetificado = fields.Char(string=_('Numero de cetificado'))
-    cetificaso_sat = fields.Char(string=_('Cetificao SAT'))
-    folio_fiscal = fields.Char(string=_('Folio Fiscal'), readonly=True)
-    fecha_certificacion = fields.Char(string=_('Fecha y Hora Certificación'))
-    cadena_origenal = fields.Char(string=_('Cadena Origenal del Complemento digital de SAT'))
-    selo_digital_cdfi = fields.Char(string=_('Selo Digital del CDFI'))
-    selo_sat = fields.Char(string=_('Selo del SAT'))
+    qrcode_image = fields.Binary("QRCode", copy=False)
+    numero_cetificado = fields.Char(string=_('Numero de cetificado'), copy=False)
+    cetificaso_sat = fields.Char(string=_('Cetificao SAT'), copy=False)
+    folio_fiscal = fields.Char(string=_('Folio Fiscal'), readonly=True, copy=False)
+    fecha_certificacion = fields.Char(string=_('Fecha y Hora Certificación'), copy=False)
+    cadena_origenal = fields.Char(string=_('Cadena Origenal del Complemento digital de SAT'), copy=False)
+    selo_digital_cdfi = fields.Char(string=_('Selo Digital del CDFI'), copy=False)
+    selo_sat = fields.Char(string=_('Selo del SAT'), copy=False)
     moneda = fields.Char(string=_('Moneda'))
     tipocambio = fields.Char(string=_('TipoCambio'))
     # folio = fields.Char(string=_('Folio'))
@@ -63,8 +63,8 @@ class AccountMove(models.Model):
     amount_to_text = fields.Char('Amount to Text', compute='_get_amount_to_text',
                                  size=256,
                                  help='Amount of the invoice in letter')
-    qr_value = fields.Char(string=_('QR Code Value'))
-    fecha_factura = fields.Datetime(string=_('Fecha Factura'))
+    qr_value = fields.Char(string=_('QR Code Value'), copy=False)
+    fecha_factura = fields.Datetime(string=_('Fecha Factura'), copy=False)
     # serie_emisor = fields.Char(string=_('A'))
     tipo_relacion = fields.Selection(
         selection=[('01', 'Nota de crédito de los documentos relacionados'),
@@ -125,8 +125,8 @@ class AccountMove(models.Model):
     company_cfdi = fields.Boolean(related="company_id.company_cfdi",store=True)
 
     @api.model
-    def _reverse_moves(self, default_values, cancel=True):
-        values = super(AccountMove, self)._reverse_moves(default_values, cancel)
+    def _reverse_moves(self, default_values_list=None, cancel=True):
+        values = super(AccountMove, self)._reverse_moves(default_values_list, cancel)
         for inv in self:
            if inv.estado_factura == 'factura_correcta':
                values['uuid_relacionado'] = inv.folio_fiscal
@@ -135,29 +135,7 @@ class AccountMove(models.Model):
                values['tipo_comprobante'] = 'E'
                values['uso_cfdi_id'] = inv.env['catalogo.uso.cfdi'].sudo().search([('code', '=', 'G02')]).id
                values['tipo_relacion'] = '01'
-               values['fecha_factura'] = None
-               values['qrcode_image'] = None
-               values['numero_cetificado'] = None
-               values['cetificaso_sat'] = None
-               values['selo_digital_cdfi'] = None
-               values['folio_fiscal'] = None
-               values['estado_factura'] = 'factura_no_generada'
-               values['factura_cfdi'] = False
         return values
-
-    @api.returns('self', lambda value: value.id)
-    def copy(self, default=None):
-        default = dict(default or {})
-        default['estado_factura'] = 'factura_no_generada'
-        default['folio_fiscal'] = ''
-        default['factura_cfdi'] = False
-        default['fecha_factura'] = None
-        default['qrcode_image'] = None
-        default['numero_cetificado'] = None
-        default['cetificaso_sat'] = None
-        default['selo_digital_cdfi'] = None
-        default['folio_fiscal'] = None
-        return super(AccountMove, self).copy(default=default)
 
     @api.depends('name')
     def _get_number_folio(self):
@@ -273,15 +251,15 @@ class AccountMove(models.Model):
             'receptor': {
                 'nombre': nombre,
                 'rfc': self.partner_id.vat.upper() if self.partner_id.country_id.code == 'MX' else 'XEXX010101000',
-                'ResidenciaFiscal': self.partner_id.residencia_fiscal,
-                'NumRegIdTrib': self.partner_id.registro_tributario,
+                'ResidenciaFiscal': self.partner_id.country_id.codigo_mx if self.partner_id.country_id.code != 'MX' else '',
+                'NumRegIdTrib': self.partner_id.vat.upper() if self.partner_id.country_id.code != 'MX' else '',
                 'UsoCFDI': self.uso_cfdi_id.code,
                 'RegimenFiscalReceptor': self.partner_id.regimen_fiscal_id.code,
                 'DomicilioFiscalReceptor': zipreceptor,
             },
             'informacion': {
                 'cfdi': '4.0',
-                'sistema': 'odoo17',
+                'sistema': 'odoo18',
                 'version': '1',
                 'api_key': self.company_id.proveedor_timbrado,
                 'modo_prueba': self.company_id.modo_prueba,
@@ -488,6 +466,10 @@ class AccountMove(models.Model):
             components = []
             if line.product_id.product_parts_ids:
                 for component in line.product_id.product_parts_ids:
+                    if not component.product_id.clave_producto:
+                        raise UserError(_('El producto %s tiene un componente sin clave de producto.') % (line.product_id.name))
+                    if not component.product_id.name:
+                        raise UserError(_('El producto %s tiene un componente sin nombre.') % (line.product_id.name))
                     components.append({'ClaveProdServ': component.product_id.clave_producto,
                                       'Cantidad': component.cantidad,
                                       'Descripcion': self.clean_text(component.product_id.name),
@@ -645,6 +627,10 @@ class AccountMove(models.Model):
             self.write({'proceso_timbrado': False})
             self.env.cr.commit()
             raise UserError(_('El receptor no tiene nombre configurado.'))
+        if not self.partner_id.country_id:
+            self.write({'proceso_timbrado': False})
+            self.env.cr.commit()
+            raise UserError(_('El receptor no tiene un país configurado.'))
         if not self.uso_cfdi_id:
             self.write({'proceso_timbrado': False})
             self.env.cr.commit()
@@ -734,11 +720,9 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
 
             values = invoice.to_json()
             if invoice.company_id.proveedor_timbrado == 'servidor':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/invoice')
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/invoice')
             elif invoice.company_id.proveedor_timbrado == 'servidor2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/invoice')
-            elif invoice.company_id.proveedor_timbrado == 'servidor3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/invoice')
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/invoice')
             else:
                 invoice.write({'proceso_timbrado': False})
                 self.env.cr.commit()
@@ -747,7 +731,7 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
 
             try:
                 response = requests.post(url,
-                                         auth=None, verify=False, data=json.dumps(values),
+                                         auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
             except Exception as e:
                 error = str(e)
@@ -830,19 +814,17 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                     'motivo': self.env.context.get('motivo_cancelacion', '02'),
                     'foliosustitucion': self.env.context.get('foliosustitucion', ''),
                 }
-                if self.company_id.proveedor_timbrado == 'servidor':
-                    url = '%s' % ('http://facturacion.itadmin.com.mx/api/refund')
+                if invoice.company_id.proveedor_timbrado == 'servidor':
+                    url = '%s' % ('https://facturacion.itadmin.com.mx/api/refund')
                 elif invoice.company_id.proveedor_timbrado == 'servidor2':
-                    url = '%s' % ('http://facturacion2.itadmin.com.mx/api/refund')
-                elif invoice.company_id.proveedor_timbrado == 'servidor3':
-                    url = '%s' % ('http://facturacion3.itadmin.com.mx/api/refund')
+                    url = '%s' % ('https://facturacion2.itadmin.com.mx/api/refund')
                 else:
                     raise UserError(
                         _('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
                 try:
                     response = requests.post(url,
-                                             auth=None, verify=False, data=json.dumps(values),
+                                             auth=None, data=json.dumps(values),
                                              headers={"Content-type": "application/json"})
                 except Exception as e:
                     error = str(e)
@@ -909,18 +891,16 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
             }
 
             if invoice.company_id.proveedor_timbrado == 'servidor':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/consulta-cacelar')
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/consulta-cacelar')
             elif invoice.company_id.proveedor_timbrado == 'servidor2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/consulta-cacelar')
-            elif invoice.company_id.proveedor_timbrado == 'servidor3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/consulta-cacelar')
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/consulta-cacelar')
             else:
                 raise UserError(
                     _('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
             try:
                 response = requests.post(url,
-                                         auth=None, verify=False, data=json.dumps(values),
+                                         auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
 
                 if "Whoops, looks like something went wrong." in response.text:
@@ -977,15 +957,13 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
             }
             url = ''
             if invoice.company_id.proveedor_timbrado == 'servidor':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/command')
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/command')
             elif invoice.company_id.proveedor_timbrado == 'servidor2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/command')
-            elif invoice.company_id.proveedor_timbrado == 'servidor3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/command')
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/command')
             if not url:
                 return
             try:
-                response = requests.post(url, auth=None, verify=False, data=json.dumps(values),
+                response = requests.post(url, auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
 
                 if "Whoops, looks like something went wrong." in response.text:

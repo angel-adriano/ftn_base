@@ -8,16 +8,12 @@
             <field name="inherit_id" ref="base.view_partner_form" />
             <field name="arch" type="xml">
                 <xpath expr="//notebook" position="inside">
-                    <field name="company_cfdi" invisible="1"/>
+                    <field name="company_cfdi" invisible="1"/> <!-- invisible -->
                     <page name="info_cdfi" string="CFDI" invisible="company_cfdi == False">
                             <group cols="4">
                                 <group string="Preferencias de factura">
                                     <field name="uso_cfdi_id"/>
                                     <field name="regimen_fiscal_id"/>
-                                </group>
-                                <group string="Detalles extranjero">
-                                    <field name="residencia_fiscal"/>
-                                    <field name="registro_tributario"/>
                                 </group>
                             </group>
                     </page>
