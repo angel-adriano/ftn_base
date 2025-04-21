@@ -46,15 +46,60 @@ class ProductTemplate(models.Model):
                     db, uid, password,
                     'product.template', 'search_read',
                     [domain],
-                    {'fields': ['list_price', 'standard_price'], 'limit': 1}
+                    {'fields': ['list_price', 'standard_price', 'taxes_id', 'supplier_taxes_id'], 'limit': 1}
                 )
                 if result:
                     data = result[0]
                     product.list_price = data.get('list_price', 0.0)
                     product.standard_price = data.get('standard_price', 0.0)
-                    _logger.info(
-                        f"Updated price for product {product.id} using {matched_field}: {result[0]['list_price']}"
-                    )
+
+                    # Handle taxes
+                    odoo14_tax_ids = data.get('taxes_id', [])
+                    if odoo14_tax_ids:
+                        # Get tax names from Odoo 14
+                        tax_names = models14.execute_kw(
+                            db, uid, password,
+                            'account.tax', 'read',
+                            [odoo14_tax_ids], {'fields': ['name']}
+                        )
+
+                        # Search matching tax names in Odoo 18
+                        matched_tax_ids = []
+                        for tax in tax_names:
+                            tax_name = tax['name']
+                            local_tax = self.env['account.tax'].search([('name', '=', tax_name)], limit=1)
+                            if local_tax:
+                                matched_tax_ids.append(local_tax.id)
+                            else:
+                                _logger.warning(f"Tax '{tax_name}' not found in Odoo 18")
+
+                        if matched_tax_ids:
+                            product.taxes_id = [(6, 0, matched_tax_ids)]
+                            _logger.info(f"Updated taxes for {product.name} to {matched_tax_ids}")
+                        else:
+                            _logger.warning(f"No matching taxes found for {product.name}, taxes not updated")
+
+                    odoo14_supplier_tax_ids = data.get('supplier_taxes_id', [])
+                    if odoo14_supplier_tax_ids:
+                        matched_supplier_tax_ids = []
+                        if odoo14_supplier_tax_ids:
+                            supplier_tax_names = models14.execute_kw(
+                                db, uid, password,
+                                'account.tax', 'read',
+                                [odoo14_supplier_tax_ids], {'fields': ['name']}
+                            )
+                            for tax in supplier_tax_names:
+                                local_tax = self.env['account.tax'].search([('name', '=', tax['name'])], limit=1)
+                                if local_tax:
+                                    matched_supplier_tax_ids.append(local_tax.id)
+                                else:
+                                    _logger.warning(f"[Supplier Tax] '{tax['name']}' not found in Odoo 18")
+
+                        if matched_supplier_tax_ids:
+                            product.supplier_taxes_id = [(6, 0, matched_supplier_tax_ids)]
+                            _logger.info(f"Updated supplier taxes for {product.name} to {matched_supplier_tax_ids}")
+                        else:
+                            _logger.warning(f"No matching supplier taxes found for {product.name}")
                 else:
                     _logger.warning(f"No match found for product {product.id} using {matched_field}: {domain}")
             except Exception as e:
