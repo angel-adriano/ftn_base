@@ -12,4 +12,19 @@
             </xpath>
         </field>
     </record>
+
+    <record id="view_Product_image_import" model="ir.ui.view">
+        <field name="name">Product.image.form.custom</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_information']//group" position="inside">
+                <!-- <xpath expr="//form//field[@name='image_1920']" position="after"> -->
+                <group>
+                    <field class="o_field_widget" name="image_url" string="Product Image Url"/>
+                </group>
+
+            </xpath>
+        </field>
+    </record>
 </odoo>
