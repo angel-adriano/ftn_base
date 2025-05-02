@@ -22,6 +22,7 @@
                 <!-- <xpath expr="//form//field[@name='image_1920']" position="after"> -->
                 <group>
                     <field class="o_field_widget" name="image_url" string="Product Image Url"/>
+<!--                    <field name="image_variant_1920" widget="image"/>-->
                 </group>
 
             </xpath>

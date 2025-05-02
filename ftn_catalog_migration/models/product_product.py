@@ -15,8 +15,8 @@ class ImportImage(models.Model):
             try:
                 # Fetch the image (URL or file)
                 image_data = fetch_image(image)
-                self.image_1920 = image_data  # Attach image to the product
+                self.image_variant_1920 = image_data  # Attach image to the product
             except ValidationError as e:
                 raise ValidationError(_("Error with import image %s") % str(e))
         else:
-            self.image_1920 = False
+            self.image_variant_1920 = False
