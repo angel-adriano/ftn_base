@@ -137,30 +137,13 @@ class ResConfigSettings(models.TransientModel):
                 model = self.env[model_name].sudo()
                 table = model._table
 
-                # Get record IDs to clean related attachments
-                if 'company_id' in model._fields and company:
-                    self._cr.execute(f"SELECT id FROM {table} WHERE company_id = %s", (company.id,))
-                else:
-                    self._cr.execute(f"SELECT id FROM {table}")
-                record_ids = [row[0] for row in self._cr.fetchall()]
-
-                # Delete records via raw SQL
                 if 'company_id' in model._fields and company:
                     self._cr.execute(f"DELETE FROM {table} WHERE company_id = %s", (company.id,))
                 else:
                     self._cr.execute(f"DELETE FROM {table}")
-
-                # Delete linked attachments
-                if record_ids:
-                    self.env['ir.attachment'].sudo().search([
-                        ('res_model', '=', model_name),
-                        ('res_id', 'in', record_ids)
-                    ]).unlink()
-
             except Exception as e:
                 _logger.warning('Failed to delete from %s: %s', model_name, e)
 
-        # Reset sequences
         for prefix in s:
             domain = ['|', ('code', '=ilike', prefix + '%'), ('prefix', '=ilike', prefix + '%')]
             try:
