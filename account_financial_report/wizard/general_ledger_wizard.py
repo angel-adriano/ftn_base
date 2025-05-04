@@ -22,6 +22,12 @@ class GeneralLedgerReportWizard(models.TransientModel):
     _description = "General Ledger Report Wizard"
     _inherit = "account_financial_report_abstract_wizard"
 
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        required=False,
+        string="Company",
+    )
     date_range_id = fields.Many2one(comodel_name="date.range", string="Date range")
     date_from = fields.Date(required=True, default=lambda self: self._init_date_from())
     date_to = fields.Date(required=True, default=fields.Date.context_today)
@@ -48,10 +54,6 @@ class GeneralLedgerReportWizard(models.TransientModel):
     )
     receivable_accounts_only = fields.Boolean()
     payable_accounts_only = fields.Boolean()
-    account_type_ids = fields.Many2many(
-        comodel_name="account.account.type",
-        string="Account Types",
-    )
     partner_ids = fields.Many2many(
         comodel_name="res.partner",
         string="Filter partners",
@@ -87,10 +89,9 @@ class GeneralLedgerReportWizard(models.TransientModel):
         string="Account Code To",
         help="Ending account in a range",
     )
-    grouped_by = fields.Selection(
-        selection=[("", "None"), ("partners", "Partners"), ("taxes", "Taxes")],
-        default="partners",
-        string="Grouped by",
+    show_partner_details = fields.Boolean(
+        string="Show Partner Details",
+        default=True,
     )
     show_cost_center = fields.Boolean(
         string="Show Analytic Account",
@@ -117,31 +118,18 @@ class GeneralLedgerReportWizard(models.TransientModel):
             start_range = int(self.account_code_from.code)
             end_range = int(self.account_code_to.code)
             self.account_ids = self.env["account.account"].search(
-                [("code", ">=", start_range), ("code", "<=", end_range)]
+                [("code", "in", [x for x in range(start_range, end_range + 1)])]
             )
             if self.company_id:
                 self.account_ids = self.account_ids.filtered(
                     lambda a: a.company_id == self.company_id
                 )
 
-    @api.onchange("account_type_ids")
-    def _onchange_account_type_ids(self):
-        if self.account_type_ids:
-            self.account_ids = self.env["account.account"].search(
-                [
-                    ("company_id", "=", self.company_id.id),
-                    ("user_type_id", "in", self.account_type_ids.ids),
-                ]
-            )
-        else:
-            self.account_ids = None
-
     def _init_date_from(self):
         """set start date to begin of current year if fiscal year running"""
         today = fields.Date.context_today(self)
-        company = self.company_id or self.env.company
-        last_fsc_month = company.fiscalyear_last_month
-        last_fsc_day = company.fiscalyear_last_day
+        last_fsc_month = self.env.user.company_id.fiscalyear_last_month
+        last_fsc_day = self.env.user.company_id.fiscalyear_last_day
 
         if (
             today.month < int(last_fsc_month)
@@ -200,8 +188,6 @@ class GeneralLedgerReportWizard(models.TransientModel):
                 self.account_ids = self.account_ids.filtered(
                     lambda a: a.company_id == self.company_id
                 )
-        if self.company_id and self.account_type_ids:
-            self._onchange_account_type_ids()
         if self.company_id and self.cost_center_ids:
             self.cost_center_ids = self.cost_center_ids.filtered(
                 lambda c: c.company_id == self.company_id
@@ -311,11 +297,44 @@ class GeneralLedgerReportWizard(models.TransientModel):
             .report_action(self, data=data)
         )
 
+    def button_export_html(self):
+        self.ensure_one()
+        report_type = "qweb-html"
+        return self._export(report_type)
+
+    def button_export_pdf(self):
+        self.ensure_one()
+        report_type = "qweb-pdf"
+        return self._export(report_type)
+
+    def button_export_xlsx(self):
+        self.ensure_one()
+        report_type = "xlsx"
+        return self._export(report_type)
+
     def _prepare_report_general_ledger(self):
         self.ensure_one()
         return {
             "wizard_id": self.id,
+            "date_from": self.date_from,
+            "date_to": self.date_to,
+            "only_posted_moves": self.target_move == "posted",
+            "hide_account_at_0": self.hide_account_at_0,
+            "foreign_currency": self.foreign_currency,
+            "show_analytic_tags": self.show_analytic_tags,
+            "company_id": self.company_id.id,
+            "account_ids": self.account_ids.ids,
+            "partner_ids": self.partner_ids.ids,
+            "show_partner_details": self.show_partner_details,
+            "cost_center_ids": self.cost_center_ids.ids,
+            "show_cost_center": self.show_cost_center,
+            "analytic_tag_ids": self.analytic_tag_ids.ids,
+            "journal_ids": self.account_journal_ids.ids,
+            "centralize": self.centralize,
+            "fy_start_date": self.fy_start_date,
+            "unaffected_earnings_account": self.unaffected_earnings_account.id,
             "account_financial_report_lang": self.env.lang,
+            "domain": self._get_account_move_lines_domain(),
         }
 
     def _export(self, report_type):

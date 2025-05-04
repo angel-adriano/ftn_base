@@ -7,12 +7,10 @@ import time
 from datetime import date
 
 from odoo import api, fields
-from odoo.tests import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 
-@tagged("post_install", "-at_install")
 class TestGeneralLedgerReport(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls, chart_template_ref=None):
@@ -128,7 +126,7 @@ class TestGeneralLedgerReport(AccountTestInvoicingCommon):
         partner_in_report = False
         for account in general_ledger:
             if account["id"] == account_id and account["partners"]:
-                for partner in account["list_grouped"]:
+                for partner in account["list_partner"]:
                     if partner["id"] == partner_id:
                         partner_in_report = True
         return partner_in_report
@@ -146,7 +144,7 @@ class TestGeneralLedgerReport(AccountTestInvoicingCommon):
         initial_balance = False
         for account in general_ledger:
             if account["id"] == account_id and account["partners"]:
-                for partner in account["list_grouped"]:
+                for partner in account["list_partner"]:
                     if partner["id"] == partner_id:
                         initial_balance = partner["init_bal"]
         return initial_balance
@@ -164,7 +162,7 @@ class TestGeneralLedgerReport(AccountTestInvoicingCommon):
         final_balance = False
         for account in general_ledger:
             if account["id"] == account_id and account["partners"]:
-                for partner in account["list_grouped"]:
+                for partner in account["list_partner"]:
                     if partner["id"] == partner_id:
                         final_balance = partner["fin_bal"]
         return final_balance
@@ -721,24 +719,3 @@ class TestGeneralLedgerReport(AccountTestInvoicingCommon):
         wizard.onchange_date_range_id()
         self.assertEqual(wizard.date_from, date(2018, 1, 1))
         self.assertEqual(wizard.date_to, date(2018, 12, 31))
-
-    def test_account_type_filter(self):
-        company_id = self.env.user.company_id
-        account_model = self.env["account.account"]
-        account = account_model.search([], limit=1)
-        account_type = account.user_type_id
-        accounts = account_model.search(
-            [
-                ("company_id", "=", company_id.id),
-                ("user_type_id", "in", account_type.ids),
-            ]
-        )
-        wizard = self.env["general.ledger.report.wizard"].create(
-            {"account_type_ids": account_type, "company_id": company_id.id}
-        )
-        wizard.onchange_company_id()
-        self.assertEqual(wizard.account_ids, accounts)
-
-        wizard.account_type_ids = False
-        wizard._onchange_account_type_ids()
-        self.assertEqual(wizard.account_ids, account_model)

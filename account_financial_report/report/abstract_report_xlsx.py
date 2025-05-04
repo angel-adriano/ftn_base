@@ -73,23 +73,17 @@ class AbstractReportXslx(models.AbstractModel):
             ),
             "format_header_amount": workbook.add_format(
                 {"bold": True, "border": True, "bg_color": "#FFFFCC"}
+            ).set_num_format("#,##0." + "0" * currency_id.decimal_places),
+            "format_amount": workbook.add_format().set_num_format(
+                "#,##0." + "0" * currency_id.decimal_places
             ),
-            "format_amount": workbook.add_format(),
-            "format_amount_bold": workbook.add_format({"bold": True}),
+            "format_amount_bold": workbook.add_format({"bold": True}).set_num_format(
+                "#,##0." + "0" * currency_id.decimal_places
+            ),
             "format_percent_bold_italic": workbook.add_format(
                 {"bold": True, "italic": True}
-            ),
+            ).set_num_format("#,##0.00%"),
         }
-        report_data["formats"]["format_amount"].set_num_format(
-            "#,##0." + "0" * currency_id.decimal_places
-        )
-        report_data["formats"]["format_header_amount"].set_num_format(
-            "#,##0." + "0" * currency_id.decimal_places
-        )
-        report_data["formats"]["format_percent_bold_italic"].set_num_format("#,##0.00%")
-        report_data["formats"]["format_amount_bold"].set_num_format(
-            "#,##0." + "0" * currency_id.decimal_places
-        )
 
     def _set_column_width(self, report_data):
         """Set width for all defined columns.
@@ -239,7 +233,10 @@ class AbstractReportXslx(models.AbstractModel):
             value = line_dict.get(column["field"], False)
             cell_type = column.get("type", "string")
             if cell_type == "string":
-                if line_dict.get("type", "") == "group_type":
+                if (
+                    line_dict.get("account_group_id", False)
+                    and line_dict["account_group_id"]
+                ):
                     report_data["sheet"].write_string(
                         report_data["row_pos"],
                         col_pos,
@@ -282,8 +279,6 @@ class AbstractReportXslx(models.AbstractModel):
                     value or "",
                     report_data["formats"]["format_right"],
                 )
-            else:
-                self.write_non_standard_column(cell_type, col_pos, value)
         report_data["row_pos"] += 1
 
     def write_initial_balance(self, my_object, label, report_data):
@@ -524,7 +519,7 @@ class AbstractReportXslx(models.AbstractModel):
         report_data["row_pos"] += 1
 
     def _get_currency_amt_format(self, line_object, report_data):
-        """Return amount format specific for each currency."""
+        """ Return amount format specific for each currency. """
         if "account_group_id" in line_object and line_object["account_group_id"]:
             format_amt = report_data["formats"]["format_amount_bold"]
             field_prefix = "format_amount_bold"
@@ -532,21 +527,20 @@ class AbstractReportXslx(models.AbstractModel):
             format_amt = report_data["formats"]["format_amount"]
             field_prefix = "format_amount"
         if "currency_id" in line_object and line_object.get("currency_id", False):
-            if isinstance(line_object["currency_id"], int):
-                currency = self.env["res.currency"].browse(line_object["currency_id"])
-            else:
-                currency = line_object["currency_id"]
-            field_name = "{}_{}".format(field_prefix, currency.name)
+            field_name = "{}_{}".format(field_prefix, line_object["currency_id"].name)
             if hasattr(self, field_name):
                 format_amt = getattr(self, field_name)
             else:
                 format_amt = report_data["workbook"].add_format()
                 report_data["field_name"] = format_amt
-                format_amt.set_num_format(self._report_xlsx_currency_format(currency))
+                format_amount = "#,##0." + (
+                    "0" * line_object["currency_id"].decimal_places
+                )
+                format_amt.set_num_format(format_amount)
         return format_amt
 
     def _get_currency_amt_format_dict(self, line_dict, report_data):
-        """Return amount format specific for each currency."""
+        """ Return amount format specific for each currency. """
         if line_dict.get("account_group_id", False) and line_dict["account_group_id"]:
             format_amt = report_data["formats"]["format_amount_bold"]
             field_prefix = "format_amount_bold"
@@ -564,11 +558,12 @@ class AbstractReportXslx(models.AbstractModel):
             else:
                 format_amt = report_data["workbook"].add_format()
                 report_data["field_name"] = format_amt
-                format_amt.set_num_format(self._report_xlsx_currency_format(currency))
+                format_amount = "#,##0." + ("0" * currency.decimal_places)
+                format_amt.set_num_format(format_amount)
         return format_amt
 
     def _get_currency_amt_header_format(self, line_object, report_data):
-        """Return amount header format for each currency."""
+        """ Return amount header format for each currency. """
         format_amt = report_data["formats"]["format_header_amount"]
         if line_object.currency_id:
             field_name = "format_header_amount_%s" % line_object.currency_id.name
@@ -586,7 +581,7 @@ class AbstractReportXslx(models.AbstractModel):
         return format_amt
 
     def _get_currency_amt_header_format_dict(self, line_object, report_data):
-        """Return amount header format for each currency."""
+        """ Return amount header format for each currency. """
         format_amt = report_data["formats"]["format_header_amount"]
         if line_object["currency_id"]:
             field_name = "format_header_amount_%s" % line_object["currency_name"]
@@ -688,11 +683,5 @@ class AbstractReportXslx(models.AbstractModel):
     def _get_col_pos_final_balance_label(self):
         """
         :return: the columns position used for final balance label.
-        """
-        raise NotImplementedError()
-
-    def write_non_standard_column(self, cell_type, col_pos, value):
-        """
-        Write columns out of the columns type defined here.
         """
         raise NotImplementedError()

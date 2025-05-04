@@ -49,8 +49,6 @@ class JournalLedgerReport(models.AbstractModel):
         ]
         if wizard.move_target != "all":
             domain += [("state", "=", wizard.move_target)]
-        else:
-            domain += [("state", "in", ["posted", "draft"])]
         return domain
 
     def _get_moves_order(self, wizard, journal_ids):
@@ -84,10 +82,7 @@ class JournalLedgerReport(models.AbstractModel):
         return [("display_type", "=", False), ("move_id", "in", move_ids)]
 
     def _get_move_lines_order(self, move_ids, wizard, journal_ids):
-        """Add `move_id` to make sure the order of the records is correct
-        (especially if we use auto-sequence).
-        """
-        return "move_id"
+        return ""
 
     def _get_move_lines_data(self, ml, wizard, ml_taxes, auto_sequence):
         base_debit = (

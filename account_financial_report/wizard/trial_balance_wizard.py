@@ -16,6 +16,12 @@ class TrialBalanceReportWizard(models.TransientModel):
     _description = "Trial Balance Report Wizard"
     _inherit = "account_financial_report_abstract_wizard"
 
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        required=False,
+        string="Company",
+    )
     date_range_id = fields.Many2one(comodel_name="date.range", string="Date range")
     date_from = fields.Date(required=True)
     date_to = fields.Date(required=True)
@@ -26,9 +32,20 @@ class TrialBalanceReportWizard(models.TransientModel):
         required=True,
         default="posted",
     )
-    show_hierarchy = fields.Boolean(
-        string="Show hierarchy",
-        help="Use when your account groups are hierarchical",
+    hierarchy_on = fields.Selection(
+        [
+            ("computed", "Computed Accounts"),
+            ("relation", "Child Accounts"),
+            ("none", "No hierarchy"),
+        ],
+        string="Hierarchy On",
+        required=True,
+        default="none",
+        help="""Computed Accounts: Use when the account group have codes
+        that represent prefixes of the actual accounts.\n
+        Child Accounts: Use when your account groups are hierarchical.\n
+        No hierarchy: Use to display just the accounts, without any grouping.
+        """,
     )
     limit_hierarchy_level = fields.Boolean("Limit hierarchy levels")
     show_hierarchy_level = fields.Integer("Hierarchy Levels to display", default=1)
@@ -83,19 +100,19 @@ class TrialBalanceReportWizard(models.TransientModel):
             start_range = int(self.account_code_from.code)
             end_range = int(self.account_code_to.code)
             self.account_ids = self.env["account.account"].search(
-                [("code", ">=", start_range), ("code", "<=", end_range)]
+                [("code", "in", [x for x in range(start_range, end_range + 1)])]
             )
             if self.company_id:
                 self.account_ids = self.account_ids.filtered(
                     lambda a: a.company_id == self.company_id
                 )
 
-    @api.constrains("show_hierarchy", "show_hierarchy_level")
+    @api.constrains("hierarchy_on", "show_hierarchy_level")
     def _check_show_hierarchy_level(self):
         for rec in self:
-            if rec.show_hierarchy and rec.show_hierarchy_level <= 0:
+            if rec.hierarchy_on != "none" and rec.show_hierarchy_level <= 0:
                 raise UserError(
-                    _("The hierarchy level to filter on must be greater than 0.")
+                    _("The hierarchy level to filter on must be " "greater than 0.")
                 )
 
     @api.depends("date_from")
@@ -241,6 +258,21 @@ class TrialBalanceReportWizard(models.TransientModel):
             .report_action(self, data=data)
         )
 
+    def button_export_html(self):
+        self.ensure_one()
+        report_type = "qweb-html"
+        return self._export(report_type)
+
+    def button_export_pdf(self):
+        self.ensure_one()
+        report_type = "qweb-pdf"
+        return self._export(report_type)
+
+    def button_export_xlsx(self):
+        self.ensure_one()
+        report_type = "xlsx"
+        return self._export(report_type)
+
     def _prepare_report_trial_balance(self):
         self.ensure_one()
         return {
@@ -255,7 +287,7 @@ class TrialBalanceReportWizard(models.TransientModel):
             "partner_ids": self.partner_ids.ids or [],
             "journal_ids": self.journal_ids.ids or [],
             "fy_start_date": self.fy_start_date,
-            "show_hierarchy": self.show_hierarchy,
+            "hierarchy_on": self.hierarchy_on,
             "limit_hierarchy_level": self.limit_hierarchy_level,
             "show_hierarchy_level": self.show_hierarchy_level,
             "hide_parent_hierarchy_level": self.hide_parent_hierarchy_level,
