@@ -162,7 +162,9 @@ class AccountMove(models.Model):
     def _get_number_folio(self):
         for record in self:
             if record.name:
-                record.number_folio = record.name.replace('INV', '').replace('/', '')
+                record.number_folio = ''.join(re.findall(r'\d+', record.name))
+            else:
+                record.number_folio = False
 
     @api.depends('amount_total', 'currency_id')
     def _get_amount_to_text(self):
