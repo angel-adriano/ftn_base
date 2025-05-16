@@ -4,6 +4,10 @@
         <field name="model">import.products.wizard</field>
         <field name="arch" type="xml">
             <form string="Import WooCommerce Products">
+                <group>
+                    <div>Sincronizar productos creados</div>
+                    <field name="sync_date"/>
+                </group>
 
                 <footer>
                     <button string="Import Products" type="object" name="import_woocommerce_products"

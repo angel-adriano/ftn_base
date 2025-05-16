@@ -1,6 +1,7 @@
 from odoo import models, fields, api
 from woocommerce import API
 import logging
+from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ class ImportProductsWizard(models.TransientModel):
     wc_url = fields.Char(string="WooCommerce URL")
     wc_consumer_key = fields.Char(string="Consumer Key")
     wc_consumer_secret = fields.Char(string="Consumer Secret")
+    sync_date = fields.Date(string='A partir de')
 
     def import_woocommerce_products(self):
         Param = self.env['ir.config_parameter'].sudo()
@@ -27,20 +29,33 @@ class ImportProductsWizard(models.TransientModel):
             version="wc/v3"
         )
 
-        def get_all_products(per_page=100):
+        def get_all_products(per_page=100, created_after=None):
             page = 1
             all_products = []
 
+            # Format for WooCommerce API: 'YYYY-MM-DDTHH:MM:SS'
+            after_param = None
+            if created_after:
+                after_param = datetime.combine(created_after, datetime.min.time()).isoformat()
+
             while True:
-                response = wcapi.get("products", params={"per_page": per_page, "page": page})
+                params = {
+                    "per_page": per_page,
+                    "page": page
+                }
+                if after_param:
+                    params["after"] = after_param
+
+                response = wcapi.get("products", params=params)
                 data = response.json()
                 if not data:
                     break
                 all_products.extend(data)
                 page += 1
+
             return all_products
 
-        products = get_all_products()
+        products = get_all_products(created_after=self.sync_date)
         _logger.info(f"Retrieved {len(products)} products from WooCommerce")
 
         for product in products:
