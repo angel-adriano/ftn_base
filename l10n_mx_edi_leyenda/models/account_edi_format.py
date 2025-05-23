@@ -12,9 +12,9 @@ class AccountEdiFormat(models.Model):
         if invoice.leyenda:
 
             vals.update({
-                'disposicionfiscal': invoice.company_id.disposicionfiscal,
-                'norma': invoice.company_id.norma,
-                'textoleyenda': invoice.company_id.textoleyenda,
+                'disposicionfiscal': invoice.partner_id.x_studio_disposicion_fiscal,
+                'norma': invoice.partner_id.x_studio_norma,
+                'textoleyenda': invoice.partner_id.x_studio_texto_leyenda,
             })
 
         return vals
