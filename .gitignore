@@ -1,6 +1,0 @@
-*.pyc 
-*.code-workspace
-.vscode/*
-.idea/
-__pycache__/
-*.bak
