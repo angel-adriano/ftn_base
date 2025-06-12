@@ -89,13 +89,6 @@ msgid "ID"
 msgstr "תעודה מזהה"
 
 #. module: account_statement_import_file
-#. odoo-python
-#: code:addons/account_statement_import_file/models/account_journal.py:0
-#, python-format
-msgid "Import"
-msgstr "ייבוא"
-
-#. module: account_statement_import_file
 #: model:ir.actions.act_window,name:account_statement_import_file.account_statement_import_action
 #, fuzzy
 msgid "Import Bank Statement File"
@@ -113,7 +106,10 @@ msgid "Import Statement"
 msgstr "יבא שורה"
 
 #. module: account_statement_import_file
+#. odoo-javascript
+#: code:addons/account_statement_import_file/static/src/account_statement_import_file/account_statement_import_file.xml:0
 #: model_terms:ir.ui.view,arch_db:account_statement_import_file.journal_dashboard_view_inherit
+#, python-format
 msgid "Import Statement (OCA)"
 msgstr ""
 
@@ -155,6 +151,13 @@ msgstr ""
 #, fuzzy, python-format
 msgid "Missing payment_ref on a transaction."
 msgstr "קובץ זה אינו מכיל עסקאות."
+
+#. module: account_statement_import_file
+#. odoo-python
+#: code:addons/account_statement_import_file/models/account_journal.py:0
+#, python-format
+msgid "OCA Import"
+msgstr ""
 
 #. module: account_statement_import_file
 #: model:ir.model.fields,field_description:account_statement_import_file.field_account_statement_import__statement_file
@@ -264,6 +267,10 @@ msgid ""
 "You have already imported this file, or this file only contains already "
 "imported transactions."
 msgstr ""
+
+#, python-format
+#~ msgid "Import"
+#~ msgstr "ייבוא"
 
 #~ msgid ""
 #~ "Get you bank statements in electronic format from your bank and select "
