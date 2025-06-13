@@ -106,23 +106,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="settings-block">
-                    <h2>WooCommerce Connection Settings</h2>
-                    <div class="row mt16 o_settings_container">
-                        <div class="content-group mt16">
-                            <label for="wc_url" class="o_light_label mr8"/>
-                            <field name="wc_url"/>
-                        </div>
-                        <div class="content-group mt16">
-                            <label for="wc_consumer_key" class="o_light_label mr8"/>
-                            <field name="wc_consumer_key"/>
-                        </div>
-                        <div class="content-group mt16">
-                            <label for="wc_consumer_secret" class="o_light_label mr8"/>
-                            <field name="wc_consumer_secret"/>
-                        </div>
-                    </div>
-                </div>
             </xpath>
         </field>
     </record>
