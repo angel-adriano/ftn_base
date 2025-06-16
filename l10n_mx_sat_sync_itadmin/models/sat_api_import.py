@@ -119,8 +119,10 @@ class SAT:
                           'Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></Transforms><DigestMethod ' \
                           'Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>{' \
                           'DV}</DigestValue></Reference></SignedInfo>'
-        signed_info = base64.b64encode(crypto.sign(self.private_key, element_to_sign, 'sha1')).decode("UTF-8").replace(
-            "\n", "")
+        if isinstance(element_to_sign, str):
+            element_to_sign = element_to_sign.encode('utf-8')
+
+        signed_info = base64.b64encode(crypto.sign(self.private_key, element_to_sign, 'sha1')).decode("UTF-8")
         values['SV'] = signed_info
         values['CER'] = esignature_cer_bin.decode()
         d = self.certificate.get_issuer().get_components()
@@ -178,6 +180,9 @@ class SAT:
                      '<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></DigestMethod>' \
                      '<DigestValue>{digest_value}</DigestValue>' \
                      '</Reference></SignedInfo>'.format(digest_value=digest_value)
+        if isinstance(dataToSign, str):
+            dataToSign = dataToSign.encode('utf-8')
+
         signature = base64.b64encode(crypto.sign(private_key, dataToSign, 'sha1')).decode('ascii')
         b64certificate = base64.b64encode(crypto.dump_certificate(crypto.FILETYPE_ASN1, certificate)).decode('ascii')
         xml = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ' \
@@ -223,27 +228,38 @@ class SAT:
                               tipo_comprobante=None, rfc_receptor=None,
                               estado_comprobante=None, rfc_a_cuenta_terceros=None, complemento=None, uuid=None):
         soap_url = 'https://cfdidescargamasivasolicitud.clouda.sat.gob.mx/SolicitaDescargaService.svc'
-        soap_action = 'http://DescargaMasivaTerceros.sat.gob.mx/ISolicitaDescargaService/SolicitaDescarga'
-        result_xpath = 'Body/SolicitaDescargaResponse/SolicitaDescargaResult'
+        #soap_action = 'http://DescargaMasivaTerceros.sat.gob.mx/ISolicitaDescargaService/SolicitaDescarga'
+        #result_xpath = 'Body/SolicitaDescargaResponse/SolicitaDescargaResult'
         arguments = {
             'RfcSolicitante': self.holder_vat,
             'FechaInicial': date_from.isoformat(),
             'FechaFinal': date_to.isoformat(),
             'TipoSolicitud': tipo_solicitud,
             'TipoComprobante': tipo_comprobante,
-            'EstadoComprobante': estado_comprobante,
+            'EstadoComprobante': 'Vigente', #estado_comprobante,
             'RfcACuentaTerceros': rfc_a_cuenta_terceros,
             'Complemento': complemento,
             'UUID': uuid,
         }
         if rfc_emisor:
             arguments['RfcEmisor'] = self.holder_vat
+            etiqueta = 'Emitidos'
+            solicitud = '<des:solicitud xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><des:RfcReceptores><des:RfcReceptor/></des:RfcReceptores></des:solicitud>' #.format(arguments['RfcReceptores'] if 'RfcReceptores' in arguments else '')
+            result_xpath = 'Body/SolicitaDescargaEmitidosResponse/SolicitaDescargaEmitidosResult'
         if rfc_receptor:
-            arguments['RfcReceptores'] = self.holder_vat
+            arguments['RfcReceptor'] = self.holder_vat
+            etiqueta = 'Recibidos'
+            solicitud = '<des:solicitud xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"></des:solicitud>'
+            result_xpath = 'Body/SolicitaDescargaRecibidosResponse/SolicitaDescargaRecibidosResult'
+
+        soap_action = 'http://DescargaMasivaTerceros.sat.gob.mx/ISolicitaDescargaService/SolicitaDescarga'+etiqueta
         cer = base64.b64encode(crypto.dump_certificate(crypto.FILETYPE_ASN1, self.certificate))
-        solicitud = '<des:solicitud xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><des:RfcReceptores><des:RfcReceptor>{}</des:RfcReceptor></des:RfcReceptores></des:solicitud>'.format(arguments['RfcReceptores'] if 'RfcReceptores' in arguments else '')
         solicitud = self.prepare_soap_download_data(cer, arguments, solicitud)
-        element_root = "<s:Envelope xmlns:des=\"http://DescargaMasivaTerceros.sat.gob.mx\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Header/><s:Body><des:SolicitaDescarga>{}</des:SolicitaDescarga></s:Body></s:Envelope>".format(solicitud)
+        if rfc_emisor:
+            element_root = "<soapenv:Envelope xmlns:des=\"http://DescargaMasivaTerceros.sat.gob.mx\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Header/><soapenv:Body><des:SolicitaDescargaEmitidos>{}</des:SolicitaDescargaEmitidos></soapenv:Body></soapenv:Envelope>".format(solicitud)
+        if rfc_receptor:
+            element_root = "<soapenv:Envelope xmlns:des=\"http://DescargaMasivaTerceros.sat.gob.mx\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Header/><soapenv:Body><des:SolicitaDescargaRecibidos>{}</des:SolicitaDescargaRecibidos></soapenv:Body></soapenv:Envelope>".format(solicitud)
+
         element_root = etree.fromstring(element_root)
         soap_request = etree.tostring(element_root, method='c14n', exclusive=1)
         communication = requests.post(
@@ -271,9 +287,9 @@ class SAT:
             'IdSolicitud': id_solicitud,
         }
         cer = base64.b64encode(crypto.dump_certificate(crypto.FILETYPE_ASN1, self.certificate))
-        solicitud = '<des:solicitud xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"/>'
+        solicitud = '<des:solicitud xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"/>'
         solicitud = self.prepare_soap_download_data(cer, arguments, solicitud)
-        element_root = '<s:Envelope xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header/><s:Body><des:VerificaSolicitudDescarga>{}</des:VerificaSolicitudDescarga></s:Body></s:Envelope>'.format(solicitud)
+        element_root = '<soapenv:Envelope xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Header/><soapenv:Body><des:VerificaSolicitudDescarga>{}</des:VerificaSolicitudDescarga></soapenv:Body></soapenv:Envelope>'.format(solicitud)
         element_root = etree.fromstring(element_root)
         soap_request = etree.tostring(element_root, method='c14n', exclusive=1)
 
@@ -306,9 +322,9 @@ class SAT:
             'IdPaquete': id_paquete,
         }
         cer = base64.b64encode(crypto.dump_certificate(crypto.FILETYPE_ASN1, self.certificate))
-        solicitud = '<des:peticionDescarga xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" />'
+        solicitud = '<des:peticionDescarga xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" />'
         solicitud = self.prepare_soap_download_data(cer, arguments, solicitud)
-        element_root = '<s:Envelope xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx"  xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header/> <s:Body><des:PeticionDescargaMasivaTercerosEntrada>{}</des:PeticionDescargaMasivaTercerosEntrada></s:Body></s:Envelope>'.format(solicitud)
+        element_root = '<soapenv:Envelope xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx"  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Header/> <soapenv:Body><des:PeticionDescargaMasivaTercerosEntrada>{}</des:PeticionDescargaMasivaTercerosEntrada></soapenv:Body></soapenv:Envelope>'.format(solicitud)
         element_root = etree.fromstring(element_root)
         soap_request = etree.tostring(element_root, method='c14n', exclusive=1)
         communication = requests.post(

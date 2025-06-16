@@ -4,7 +4,7 @@
         <field name="name">solicitud.ws.tree.view</field>
         <field name="model">solicitud.ws</field>
         <field name="arch" type="xml">
-        <tree string="Faltas">
+        <tree string="Solicitudes" default_order="fecha desc">
             <field name="fecha"/>
             <field name="id_solicitud"/>
             <field name="cod_estatus"/>
@@ -28,24 +28,34 @@
                      </h1>
                  </div>
                  <group>
-                     <group string="Solicitud">
+                     <group string="Datos de solicitud">
                          <field name="fecha"/>
+                         <field name="fecha_inicio"/>
+                         <field name="fecha_fin"/>
+                         <field name="rfc_receptor"/>
+                         <field name="rfc_emisor"/>
+                         <field name="company_id"/>
+                     </group>
+                     <group string="Estado">
+                         <field name="state"/>
+                     </group>
+                     <group string="Solicitud">
                          <field name="id_solicitud"/>
                          <field name="cod_estatus"/>
                          <field name="mensaje"/>
-                         <field name="fecha_inicio"/>
-                         <field name="fecha_fin"/>
-                     </group>
-                     <group>
-                         <field name="rfc_receptor"/>
-                         <field name="rfc_emisor"/>
-                         <field name="state"/>
-                         <field name="company_id"/>
+                         <field name="estado_solicitud"/>
                      </group>
                      <group string="Verificación">
                          <field name="cod_verifica"/>
-                         <field name="estado_solicitud"/>
                          <field name="mensaje_ver"/>
+                         <field name="numero_cfdis"/>
+                         <field name="paquetes"/>
+                     </group>
+                     <group string="Descarga">
+                         <field name="cod_descarga"/>
+                         <field name="mensaje_descarga"/>
+                         <field name="filename" invisible="1"/>
+                         <field name="paquete_b64" filename="filename"/>
                      </group>
                  </group>
              </sheet>

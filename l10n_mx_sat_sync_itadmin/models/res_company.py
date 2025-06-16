@@ -2,7 +2,7 @@
 
 import base64
 import io
-
+import pytz
 import subprocess
 import tempfile
 import time
@@ -63,6 +63,10 @@ class ResCompany(models.Model):
     @api.model
     def auto_import_cfdi_invoices(self):
         for company in self.search([('l10n_mx_esignature_ids', '!=', False)]):
+            esignature_ids = company.l10n_mx_esignature_ids
+            esignature = esignature_ids.with_user(self.env.user).get_valid_certificate()
+            if not esignature:
+                continue
             if self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.download_type') == 'API':
                company.download_cfdi_invoices_api()
             else:
@@ -79,7 +83,7 @@ class ResCompany(models.Model):
                        esignature_ids = company.l10n_mx_esignature_ids
                        esignature = esignature_ids.with_user(self.env.user).get_valid_certificate()
                        if not esignature:
-                          raise UserError(_("No valid E-Signature found."))
+                          continue #raise UserError(_("No valid E-Signature found."))
                        sat_obj = SAT(esignature.content, esignature.key, esignature.password)
                        solicitud = {'id_solicitud': solicitud_ws.id_solicitud, 'cod_estatus': solicitud_ws.cod_estatus, 'mensaje': solicitud_ws.mensaje}
                        company.save_downloaded_content(esignature, sat_obj, solicitud, solicitud_ws.rfc_emisor)
@@ -180,16 +184,18 @@ class ResCompany(models.Model):
 
     ##### Download by API
     def download_cfdi_invoices_api(self, start_date=False, end_Date=False):
-        # date_from = datetime.date(2019, 4, 1)
-        date_from = self.last_cfdi_fetch_date if self.last_cfdi_fetch_date else fields.Datetime.now()
-        # date_to = datetime.date(2020, 2, 1)
-        date_to = fields.Datetime.now() + timedelta(days=1)
-        if start_date:
+        today = fields.Datetime.now()
+        if start_date and end_Date:
             date_from = start_date
-        if end_Date:
             date_to = end_Date
+        elif self.last_cfdi_fetch_date:
+            date_from = self.last_cfdi_fetch_date - relativedelta(days=3)
+            date_to = self.last_cfdi_fetch_date + relativedelta(days=1)
+        else:
+            date_from = today - relativedelta(days=3)
+            date_to = today + relativedelta(days=1)
         esignature_ids = self.l10n_mx_esignature_ids
-        esignature = esignature_ids.with_user(self.env.user).get_valid_certificate()
+        esignature = esignature_ids.sudo().get_valid_certificate()
         if not esignature:
             raise UserError(_("No valid E-Signature found."))
 
@@ -198,16 +204,25 @@ class ResCompany(models.Model):
         # Recibidos -- Supplier
         token = sat_obj.soap_generate_token(sat_obj.certificate, sat_obj.private_key)
 
-        solicitud_ws_ids = self.env['solicitud.ws'].search([('fecha_inicio','=', date_from.date()), ('fecha_fin','=', date_to.date()), ('rfc_receptor','=', True),
+        # corregir hora
+        timezone = self._context.get('tz')
+        if not timezone:
+           timezone = self.env.user.partner_id.tz or 'America/Mexico_City'
+
+        local = pytz.timezone(timezone)
+        diff = abs(pytz.timezone(timezone).utcoffset(datetime.now()).total_seconds() / (60*60))
+        local_dt_from = date_from + timedelta(hours=diff)
+        local_dt_to = date_to + timedelta(hours=diff)
+        solicitud_ws_ids = self.env['solicitud.ws'].search([('fecha_inicio','=', local_dt_from), ('fecha_fin','=', local_dt_to), ('rfc_receptor','=', True),
                                                             ('state','=', 'draft'), ('company_id', '=', self.id)], limit=1)
         if not solicitud_ws_ids:
            solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_receptor=True)
            solicitud_ws_ids = self.env['solicitud.ws'].create({'id_solicitud': solicitud['id_solicitud'],
                                                                'cod_estatus': solicitud['cod_estatus'],
                                                                'mensaje': solicitud['mensaje'],
-                                                               'fecha_inicio': date_from,
-                                                               'fecha_fin': date_to,
-                                                               'fecha': datetime.today().date(),
+                                                               'fecha_inicio': local_dt_from,
+                                                               'fecha_fin': local_dt_to,
+                                                               'fecha': datetime.today(),
                                                                'company_id': self.id,
                                                                'rfc_receptor': True})
         else:
@@ -215,27 +230,29 @@ class ResCompany(models.Model):
 
         self.save_downloaded_content(esignature, sat_obj, solicitud, False)
 
-        solo_documentos_de_proveedor = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin_ee.solo_documentos_de_proveedor')
-        if not solo_documentos_de_proveedor:
-           time.sleep(2)
-           # Emitidos -- customer
-           solicitud_ws_ids = self.env['solicitud.ws'].search([('fecha_inicio','=', date_from.date()), ('fecha_fin','=', date_to.date()), ('rfc_emisor','=', True),
+        time.sleep(2)
+        # Emitidos -- customer
+        solicitud_ws_ids = self.env['solicitud.ws'].search([('fecha_inicio','=', local_dt_from), ('fecha_fin','=', local_dt_to), ('rfc_emisor','=', True),
                                                                ('state','=', 'draft'), ('company_id', '=', self.id)], limit=1)
-           if not solicitud_ws_ids:
-                   solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_emisor=True)
-                   solicitud_ws_ids = self.env['solicitud.ws'].create({'id_solicitud': solicitud['id_solicitud'],
+        if not solicitud_ws_ids:
+                solicitud = sat_obj.soap_request_download(token=token, date_from=date_from, date_to=date_to, rfc_emisor=True)
+                solicitud_ws_ids = self.env['solicitud.ws'].create({'id_solicitud': solicitud['id_solicitud'],
                                                                   'cod_estatus': solicitud['cod_estatus'],
                                                                   'mensaje': solicitud['mensaje'],
-                                                                  'fecha_inicio': date_from,
-                                                                  'fecha_fin': date_to,
-                                                                  'fecha': datetime.today().date(),
+                                                                  'fecha_inicio': local_dt_from,
+                                                                  'fecha_fin': local_dt_to,
+                                                                  'fecha': datetime.today(),
                                                                   'company_id': self.id,
                                                                   'rfc_emisor': True})
-           else:
-                   solicitud = {'id_solicitud': solicitud_ws_ids.id_solicitud, 'cod_estatus': solicitud_ws_ids.cod_estatus, 'mensaje': solicitud_ws_ids.mensaje}
-           self.save_downloaded_content(esignature, sat_obj, solicitud, True)
+        else:
+                solicitud = {'id_solicitud': solicitud_ws_ids.id_solicitud, 'cod_estatus': solicitud_ws_ids.cod_estatus, 'mensaje': solicitud_ws_ids.mensaje}
+        self.save_downloaded_content(esignature, sat_obj, solicitud, True)
 
-        self.last_cfdi_fetch_date = datetime.now()
+        if not self.last_cfdi_fetch_date:
+            self.last_cfdi_fetch_date = datetime.now()
+        else:
+            if date_to > self.last_cfdi_fetch_date:
+                self.last_cfdi_fetch_date = datetime.now()
         return
 
     def save_downloaded_content(self, esignature, sat_obj, solicitud, customer_documents):
@@ -243,7 +260,7 @@ class ResCompany(models.Model):
 #        for _ in range(10):
         token = sat_obj.soap_generate_token(sat_obj.certificate, sat_obj.private_key)
         verificacion = sat_obj.soap_verify_package(esignature.holder_vat, solicitud['id_solicitud'], token)
-        estado_solicitud = int(verificacion['estado_solicitud'])
+        estado_verificacion = int(verificacion['estado_solicitud'])
         # 0, Token invalido.
         # 1, Aceptada
         # 2, En proceso
@@ -251,21 +268,28 @@ class ResCompany(models.Model):
         # 4, Error
         # 5, Rechazada
         # 6, Vencida
-
         solicitud_ws = self.env['solicitud.ws'].search([('id_solicitud','=', solicitud['id_solicitud'])], limit=1)
-        solicitud_ws.write({'cod_verifica': verificacion['codigo_estado_solicitud'],
+        solicitud_ws.write({'cod_verifica': verificacion['cod_estatus'],
                             'estado_solicitud': verificacion['estado_solicitud'],
-                            'mensaje_ver': verificacion['mensaje']})
+                            'mensaje_ver': verificacion['mensaje'],
+                            'numero_cfdis': verificacion['numero_cfdis'],
+                            'paquetes': verificacion['paquetes'],
+                           })
+
         # Si el estatus es 3 se trata de descargar los paquetes
-        if estado_solicitud == 3:
+        if estado_verificacion == 3:
                 for paquete in verificacion['paquetes']:
                     descarga = sat_obj.soap_download_package(esignature.holder_vat, paquete, token)
-                    content.append(descarga['paquete_b64'])
+                    solicitud_ws.write({'cod_descarga': descarga['cod_estatus'],
+                                        'mensaje_descarga': descarga['mensaje'],})
+                    if descarga['cod_estatus'] == '5000':
+                       content.append(descarga['paquete_b64'])
+                       solicitud_ws.write({'paquete_b64': descarga['paquete_b64'],})
                 solicitud_ws.write({'state':'done'})
-        elif estado_solicitud >= 4 or estado_solicitud == 0:
-                solicitud_ws.write({'state':'cancel'})
+        elif estado_verificacion >= 4 or estado_verificacion == 0:
+                solicitud_ws.write({'state':'done'})
         if solicitud_ws.fecha:
-           if datetime.today().date() > solicitud_ws.fecha + timedelta(days=3):
+           if datetime.today() > solicitud_ws.fecha + timedelta(days=3):
                solicitud_ws.write({'state':'cancel'})
 
         if not content:
@@ -303,8 +327,6 @@ class ResCompany(models.Model):
                     try:
                         tree = etree.fromstring(xml_content)
                     except Exception as e:
-                        self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
-                                             {'title': "Error", 'message': "No pudo leer un XML descargado", 'sticky': False, 'warning': True})
                         _logger.error('error etree.fromstring: ' + str(e))
                         continue
                     try:
@@ -467,7 +489,7 @@ class ResCompany(models.Model):
             opt['fecha_inicial'] = start_date
             opt['fecha_final'] = end_Date
         elif self.last_cfdi_fetch_date:
-            last_import_date = self.last_cfdi_fetch_date #datetime.strptime(self.last_cfdi_fetch_date,DEFAULT_SERVER_DATETIME_FORMAT)
+            last_import_date = self.last_cfdi_fetch_date
             last_import_date - relativedelta(days=2)
 
             fecha_inicial = last_import_date - relativedelta(days=2)
@@ -488,11 +510,7 @@ class ResCompany(models.Model):
                 break
         invoice_content_receptor, invoice_content_emisor = {}, {}
         if sat and sat.is_connect:
-            solo_documentos_de_proveedor = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin_ee.solo_documentos_de_proveedor')
-            if solo_documentos_de_proveedor:
-                invoice_content_receptor, invoice_content_emisor = sat.search(opt, 'supplier')
-            else:
-                invoice_content_receptor, invoice_content_emisor = sat.search(opt)
+            invoice_content_receptor, invoice_content_emisor = sat.search(opt)
             sat.logout()
         elif sat:
             sat.logout()
@@ -520,15 +538,11 @@ class ResCompany(models.Model):
                 if b'xmlns:schemaLocation' in xml_content:
                     xml_content = xml_content.replace(b'xmlns:schemaLocation', b'xsi:schemaLocation')
                 elif b'Ya no puedes descargar' in xml_content:
-                    self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
-                                             {'title': "Error", 'message': 'Límite de descarga alcanzado', 'sticky': False, 'warning': True})
                     _logger.info('Ya no puedes descargar más documentos. El SAT permite descargar un máximo de 2,000 archivos por día.')
                     continue
                 try:
                     tree = etree.fromstring(xml_content)
                 except Exception as e:
-                    self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
-                                             {'title': "Error", 'message': "No pudo leer un XML descargado", 'sticky': False, 'warning': True})
                     _logger.error('error recibida schema: ' + str(e))
                     continue
                 try:
@@ -645,8 +659,6 @@ class ResCompany(models.Model):
                 try:
                     tree = etree.fromstring(xml_content)
                 except Exception as e:
-                    self.env['bus.bus']._sendone(self.env.user.partner_id, 'simple_notification',
-                                             {'title': "Error", 'message': "No pudo leer un XML descargado", 'sticky': False, 'warning': True})
                     _logger.error('error emitida schema: ' + str(e))
                     continue
                 try:

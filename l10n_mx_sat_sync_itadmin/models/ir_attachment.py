@@ -167,7 +167,7 @@ class IrAttachment(models.Model):
                                           'selo_sat': '',
                                           'tipocambio': '',
                                           'moneda': '',
-                                         # 'folio': '',
+                                          'folio': '',
                                           'estado_factura': 'factura_no_generada'})
             if attach.payment_ids:
                 attach.payment_ids.write({'attachment_id': False,

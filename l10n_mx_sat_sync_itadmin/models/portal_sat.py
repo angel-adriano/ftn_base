@@ -869,7 +869,7 @@ class PortalSAT(object):
                 invoice_content.update(data)
         return invoice_content
 
-    def search(self, opt, download_option='both'):
+    def search(self, opt):
         filters_e = ()
         filters_r = ()
 
@@ -895,18 +895,10 @@ class PortalSAT(object):
             return self._search_by_uuid(filters_r), {}
 
         #Uncomment if you need to download Receiptor/Customer invoices.
-        invoice_content_e, invoice_content_r = {}, {}
-        if download_option=='both':
-            filters_e = self._get_filters(opt, True)
-            invoice_content_e = self._search_emitidas(filters_e)
-            filters_r = self._get_filters(opt, False)
-            invoice_content_r = self._search_recibidas(filters_r)
-        elif download_option=='supplier':
-            filters_r = self._get_filters(opt, False)
-            invoice_content_r = self._search_recibidas(filters_r)
-        elif download_option=='customer':
-            filters_e = self._get_filters(opt, True)
-            invoice_content_e = self._search_emitidas(filters_e)
+        filters_e = self._get_filters(opt, True)
+        filters_r = self._get_filters(opt, False)
+        invoice_content_e = self._search_emitidas(filters_e)
+        invoice_content_r = self._search_recibidas(filters_r)
         
         return invoice_content_r, invoice_content_e
     

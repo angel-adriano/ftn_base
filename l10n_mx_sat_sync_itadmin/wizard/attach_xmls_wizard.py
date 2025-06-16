@@ -3,7 +3,6 @@
 import base64
 
 from lxml import etree, objectify
-
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from ..models.special_dict import CaselessDictionary
@@ -22,17 +21,6 @@ class AttachXmlsWizard(models.TransientModel):
     _description = 'AttachXmlsWizard'
     
     dragndrop = fields.Char()
-
-    @api.model
-    def remove_wrong_file(self, files):
-        wrong_file_dict = self.check_xml(files)
-        remove_list = []
-        if 'wrongfiles' in wrong_file_dict.keys():
-            for key in wrong_file_dict['wrongfiles']:
-                value_keys = wrong_file_dict['wrongfiles'][key].keys()
-                if 'uuid_duplicated' in value_keys:
-                    remove_list.append(key)
-        return remove_list
 
     @staticmethod
     def _xml2capitalize(xml):
@@ -104,6 +92,8 @@ class AttachXmlsWizard(models.TransientModel):
         attachments = {}
         attachment_uuids = {}
         attach_obj = self.env['ir.attachment']
+        invoice_obj = self.env['account.move']
+        payment_obj = self.env['account.payment']
         company = self.env.company
         company_vat = company.vat
         company_id = company.id
@@ -139,12 +129,24 @@ class AttachXmlsWizard(models.TransientModel):
             else:
                 xml_uuid = xml_uuid.upper()
 
+            cfdi_vinculado = False
             cfdi_type = xml.get('TipoDeComprobante', 'I')
             receptor = xml.Receptor.attrib or {}
             receptor_rfc = receptor.get('Rfc','')
             if receptor_rfc == company_vat:
                 cfdi_type = 'S'+cfdi_type
-            
+                cfdi_vinculado = True
+
+            emisor = xml.Emisor.attrib or {}
+            emisor_rfc = emisor.get('Rfc','')
+            if emisor_rfc == company_vat:
+                cfdi_vinculado = True
+
+            if not cfdi_vinculado:
+                msg = {'error': ['No contiene el RFC de la compañia'], 'xml64': True}
+                wrongfiles.update({key: msg})
+                continue
+
             try:
                 ns = tree.nsmap
                 ns.update({'re': 'http://exslt.org/regular-expressions'})
@@ -189,7 +191,7 @@ class AttachXmlsWizard(models.TransientModel):
                       except Exception as e:
                          for payment in pagos.find('pago10:Pago',NSMAP):
                             monto_total += float(payment.attrib['Monto'])
-                   if pagos:
+                   if pagos is not None:
                        break
             else:
                 monto_total = tree.get('Total', tree.get('total'))
@@ -209,15 +211,29 @@ class AttachXmlsWizard(models.TransientModel):
                     'type' :'binary',
                     'company_id' :company_id,
                     }
-                    
+            if cfdi_type=='SP' or cfdi_type=='P':
+                    for uu in [xml_uuid,xml_uuid.lower(),xml_uuid.upper()]:
+                        payment_exist = payment_obj.search([('folio_fiscal','=',uu)],limit=1)
+                        if payment_exist:
+                            vals.update({'creado_en_odoo' : True,'payment_ids':[(6,0, payment_exist.ids)]})
+                            break
+            if cfdi_type=='SE' or cfdi_type=='E':
+                    for uu in [xml_uuid,xml_uuid.lower(),xml_uuid.upper()]:
+                        invoice_exist = invoice_obj.search([('folio_fiscal','=',uu)],limit=1)
+                        if invoice_exist:
+                            vals.update({'creado_en_odoo' : True,'invoice_ids':[(6,0, invoice_exist.ids)]})
+                            break
+            else:
+                    for uu in [xml_uuid,xml_uuid.lower(),xml_uuid.upper()]:
+                        invoice_exist = invoice_obj.search([('folio_fiscal','=',uu)],limit=1)
+                        if invoice_exist:
+                            vals.update({'creado_en_odoo' : True,'invoice_ids':[(6,0, invoice_exist.ids)]})
+                            break
             attachment_uuids.update({xml_uuid : [vals, key]})
-            #uuids.append(xml_uuid)
-            
-        
+
         attas = attach_obj.sudo().search([('cfdi_uuid','in',list(attachment_uuids.keys())), ('company_id', '=', company_id)])
         exist_uuids = dict([(att.cfdi_uuid, att.id) for att in attas]) #attas.mapped('cfdi_uuid')
-        
-        
+
         for uuid, data in attachment_uuids.items():
             key = data[1]
             if uuid in exist_uuids:
@@ -227,7 +243,7 @@ class AttachXmlsWizard(models.TransientModel):
             #cfdi_type ='S'+cfdi_type
             attach_rec = attach_obj.create(vals)
             attachments.update({key: {'attachment_id': attach_rec.id}})
-        
+
         return {'wrongfiles': wrongfiles,
                 'attachments': attachments}
 
