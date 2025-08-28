@@ -219,7 +219,7 @@ class AccountMove(models.Model):
         if not self.fecha_factura:
             self.fecha_factura = datetime.datetime.now()
 
-        if self.currency_id.name == 'MXN':
+        if self.currency_id.name.upper() == 'MXN':
             tipocambio = 1
         else:
             tipocambio = self.set_decimals(1 / self.currency_id.with_context(date=self.invoice_date).rate,
@@ -233,7 +233,7 @@ class AccountMove(models.Model):
                 'forma_pago': self.forma_pago_id.code,
                 'subtotal': self.amount_untaxed,
                 'descuento': 0,
-                'moneda': self.currency_id.name,
+                'moneda': self.currency_id.name.upper(),
                 'tipocambio': tipocambio,
                 'total': self.amount_total,
                 'tipocomprobante': self.tipo_comprobante,
@@ -300,9 +300,19 @@ class AccountMove(models.Model):
         only_exento = True
         invoice_lines = []
         negative_lines = []
+        negative_lines_subtotal = []
+        tax_incl_neg = False
         for line in self.invoice_line_ids:
             if line.price_subtotal <= 0:
-              negative_lines.append(abs(line.price_subtotal))
+                for line_tax in line.tax_ids:
+                    if line_tax.price_include:
+                        tax_incl_neg = True
+                if tax_incl_neg:
+                    negative_lines.append(abs(line.price_total))
+                    negative_lines_subtotal.append(abs(line.price_subtotal))
+                else:
+                    negative_lines.append(abs(line.price_subtotal))
+                    negative_lines_subtotal.append(abs(line.price_subtotal))
 
         for line in self.invoice_line_ids:
             if line.display_type in ('line_section', 'line_note'):
@@ -311,7 +321,7 @@ class AccountMove(models.Model):
                 self.write({'proceso_timbrado': False})
                 self.env.cr.commit()
                 raise UserError(_('Hay una línea sin producto.'))
-            if line.price_unit <= 0:
+            if line.price_unit <= 0 and self.exportacion == '01':
                 continue
 
             if not line.product_id.clave_producto:
@@ -326,20 +336,23 @@ class AccountMove(models.Model):
             promocion = False
 
             if negative_lines:
-               pos = 0
-               for promo_disc in negative_lines:
-                  if promo_disc  <= line.price_subtotal:
-                      #price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
-                      price_wo_discount = round(line.price_unit - (promo_disc / line.quantity), no_decimales_prod)
-                      promo = promo_disc
-                      promocion = True
-                      negative_lines.pop(pos)
-                      break
-                  else:
-                      price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
-                  pos += 1
+                pos = 0
+                for promo_disc in negative_lines:
+                    if promo_disc  <= line.price_subtotal:
+                        price_wo_discount = line.price_unit - (promo_disc / line.quantity)
+                        if tax_incl_neg:
+                            promo = negative_lines_subtotal[pos]
+                        else:
+                            promo = promo_disc
+                        promocion = True
+                        negative_lines.pop(pos)
+                        negative_lines_subtotal.pop(pos)
+                        break
+                    else:
+                        price_wo_discount = line.price_unit * (1 - (line.discount / 100.0))
+                    pos += 1
             else:
-               price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
+                price_wo_discount = line.price_unit * (1 - (line.discount / 100.0))
 
             taxes_prod = line.tax_ids.compute_all(price_wo_discount, line.currency_id, line.quantity,
                                                   product=line.product_id, partner=line.move_id.partner_id)
@@ -487,6 +500,11 @@ class AccountMove(models.Model):
                    objetoimp = '01'
 
             product_string = line.product_id.code and line.product_id.code[:100] or ''
+            if not line.name:
+                self.write({'proceso_timbrado': False})
+                self.env.cr.commit()
+                raise UserError(_('El producto %s tiene vacío el campo etiqueta.') % (line.product_id.name))
+
             if product_string == '':
                 if line.name.find(']') > 0:
                     product_string = line.name[line.name.find('[') + len('['):line.name.find(']')] or ''
@@ -865,7 +883,9 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
             if email_act and email_act.get('context'):
                 email_ctx = email_act['context']
                 email_ctx.update(default_email_from=inv.company_id.email)
-                inv.with_context(email_ctx).message_post_with_source(email_ctx.get('default_template_id'))
+                template_id = email_ctx.get('default_template_id')
+                if template_id:
+                    inv.with_context(email_ctx).message_post_with_source(template_id)
         return True
 
     @api.model

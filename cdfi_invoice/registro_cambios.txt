@@ -1,3 +1,15 @@
+v18.14
+-Permitir agregar conceptos en traslado de exportaciones
+
+v18.13
+-Corregir EquivalenciaDR en PDF
+
+v18.12
+-Calculo de descuentos impuestos incluidos
+
+v18.11
+-Calculo de descuentos
+
 v18.10
 -Configurar campos para no copiar.
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="stage_0" model="remittance.stage">
+        <field name="name">Draft</field>
+        <field name="sequence" eval="1" />
+        <field name="fold" eval="False"/>
+    </record>
+    <record id="stage_1" model="remittance.stage">
+        <field name="name">To approve</field>
+        <field name="sequence" eval="2" />
+        <field name="fold" eval="False"/>
+    </record>
+    <record id="stage_3" model="remittance.stage">
+        <field name="name">In process</field>
+        <field name="sequence" eval="3" />
+        <field name="fold" eval="False"/>
+    </record>
+    <record id="stage_4" model="remittance.stage">
+        <field name="name">Paid</field>
+        <field name="sequence" eval="4" />
+        <field name="fold" eval="False"/>
+    </record>
+    <record id="stage_5" model="remittance.stage">
+        <field name="name">Cancel</field>
+        <field name="sequence" eval="5" />
+        <field name="fold" eval="False"/>
+    </record>
+
+    <record id="sec_sale_plan" model="ir.sequence">
+            <field name="name">Remittance sequence</field>
+            <field name="code">remittance_seq</field>
+            <field name="prefix">AP-</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+</odoo>

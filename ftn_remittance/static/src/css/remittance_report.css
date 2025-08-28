@@ -1,0 +1,27 @@
+
+div.header, 
+div.footer {
+    display: none;
+}
+
+.page {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+.pr-30 {
+    padding-right: 30px !important;
+}
+
+.tr-line {
+    font-weight: 900 !important;
+    color: #414141;
+}
+table tbody td {
+    border: 1px solid #dee2e6;
+}
+
+.tr-line td {
+    border: 1px solid #dee2e6;
+}

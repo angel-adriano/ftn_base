@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Action -->
+    <record id="action_remittance_stage" model="ir.actions.act_window">
+        <field name="name">Remittance's Stage</field>
+        <field name="res_model">remittance.stage</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p>Add new Remittance's stage</p>
+        </field>
+    </record>
+    
+    <!-- Menus -->
+    <menuitem
+        id="menu_finance_remittance"
+        name="Remittance"
+        groups="base.group_system"
+        parent="account.menu_finance_configuration"
+        sequence="10"/>
+
+        <menuitem
+            id="submenu_finance_remittance"
+            name="Remittance's stage"
+            action="action_remittance_stage"
+            parent="menu_finance_remittance"
+            sequence="11"/>
+</odoo>

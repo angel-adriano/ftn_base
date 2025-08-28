@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="AccountRemittance.GenerateButton">
+        <button type="button"
+                class="btn btn-primary o_button_generate_remittance"
+                title="Generate Remittance">
+            <i class="fa fa-magic"/> New Remittance
+        </button>
+    </t>
+
+    <t t-extend="KanbanView.buttons">
+        <t t-jquery="button" t-operation="after">
+            <t t-call="AccountRemittance.GenerateButton"/>
+        </t>
+    </t>
+</templates>

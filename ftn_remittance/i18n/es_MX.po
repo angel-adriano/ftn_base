@@ -1,0 +1,1112 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* ftn_remittance
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0+e-20250218\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-08 17:24+0000\n"
+"PO-Revision-Date: 2025-04-08 17:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: ftn_remittance
+#: model:ir.actions.report,print_report_name:ftn_remittance.action_report_account_remittance
+msgid "'Remittance - %s' % (object.name)"
+msgstr "'Remesa - %s' % (object.name)"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.account_remittance_view_kanban
+msgid "<b>Partner:</b>"
+msgstr "<b>Proveedor:</b>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.account_remittance_view_kanban
+msgid "<b>Request to:</b>"
+msgstr "<b>Solicitar a:</b>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.account_remittance_export_wizard_view_form
+msgid "<span><strong>Click to download file</strong></span>"
+msgstr "<span><strong>Descargar archivo</strong></span>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<span>Línea de Remesa</span>"
+msgstr "<span>Línea de Remesa</span>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong># Factura</strong>"
+msgstr "<strong># Factura</strong>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong>Descripción</strong>"
+msgstr "<strong>Descripción</strong>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong>Estado</strong>"
+msgstr "<strong>Estado</strong>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong>Monto pendiente</strong>"
+msgstr "<strong>Monto pendiente</strong>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong>Motivo de rechazo</strong>"
+msgstr "<strong>Motivo de rechazo</strong>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong>Proveedor</strong>"
+msgstr "<strong>Proveedor</strong>"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.report_remittance_document
+msgid "<strong>Total a pagar</strong>"
+msgstr "<strong>Total a pagar</strong>"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance_line__partner_bank_id
+msgid "Account bank"
+msgstr "Cuenta bancaria"
+
+#. module: ftn_remittance
+#: model:ir.model,name:ftn_remittance.model_account_remittance
+msgid "Account remittance"
+msgstr "Remesa contable"
+
+#. module: ftn_remittance
+#: model:ir.model,name:ftn_remittance.model_account_remittance_line
+msgid "Account remittance line"
+msgstr "Línea de remesa"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance__activity_ids
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decoración de excepción de actividad"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance__activity_state
+msgid "Activity State"
+msgstr "Estado de la actividad"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Ícono del tipo de actividad"
+
+#. module: ftn_remittance
+#: model_terms:ir.actions.act_window,help:ftn_remittance.action_remittance_stage
+msgid "Add new Remittance's stage"
+msgstr "Agregar nueva etapa de remesa"
+
+#. module: ftn_remittance
+#: model_terms:ir.actions.act_window,help:ftn_remittance.action_remittances
+msgid "Add new record"
+msgstr "Agregar nuevo registro"
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.account_remittance_line_view_form
+msgid "Add some description..."
+msgstr "Agregar alguna descripción..."
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_bank_statement_line__xml_id
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_move__xml_id
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_payment__xml_id
+msgid "Adjunto XML"
+msgstr "Adjunto XML"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance_line__amount_paid
+msgid "Amount paid"
+msgstr "Monto pagado"
+
+#. module: ftn_remittance
+#. odoo-python
+#: code:addons/ftn_remittance/models/account_remittance.py:0
+#, python-format
+msgid "Amount paid must be less than amount to pay ($%s)"
+msgstr "La cantidad pagada debe ser menor a la cantidad pendiente ($%s)"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance_line__amount_residual
+msgid "Amount residual"
+msgstr "Monto residual"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_register_payment_wizard__amount_to_pay
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance_line__amount_to_pay
+msgid "Amount to pay"
+msgstr "Monto a pagar"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance_line__amount_total
+msgid "Amount total"
+msgstr "Monto total"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_bank_statement_line__analytic_distribution
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_move__analytic_distribution
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_payment__analytic_distribution
+msgid "Analytic"
+msgstr ""
+
+#. module: ftn_remittance
+#: model:ir.model,name:ftn_remittance.model_account_analytic_account
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_bank_statement_line__analytic_account_id
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_move__analytic_account_id
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_payment__analytic_account_id
+msgid "Analytic Account"
+msgstr "Cuenta analítica"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance_line__analytic_account_id
+msgid "Analytic account"
+msgstr "Cuenta analítica"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,help:ftn_remittance.field_account_bank_statement_line__analytic_account_id
+#: model:ir.model.fields,help:ftn_remittance.field_account_move__analytic_account_id
+#: model:ir.model.fields,help:ftn_remittance.field_account_payment__analytic_account_id
+msgid ""
+"Analytic account related to this move. This will be used to set 100% "
+"analytic distribution."
+msgstr ""
+
+#. module: ftn_remittance
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.account_remittance_view_form
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_remittance__approved_done
+#: model_terms:ir.ui.view,arch_db:ftn_remittance.account_remittance_view_form
+msgid "Approved"
+msgstr "Aprobado"
+
+#. module: ftn_remittance
+#: model:ir.model.fields,field_description:ftn_remittance.field_account_analytic_account__approver_id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__approver_id
+msgid "Approver"
+msgstr "Aprobador"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__current_approver
+msgid "Aprobador actual"
+msgstr "Aprobador actual"
+
+#. module: ftn_remittance_ee
+#: model:res.groups,name:ftn_remittance_ee.group_account_approver
+msgid "Aprovador de Remesa"
+msgstr "Aprovador de Remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.actions.act_window,name:ftn_remittance_ee.action_register_payment
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_register_payment_form
+msgid "Assign payment"
+msgstr "Asignar pago"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_register_payment_form
+msgid "Assign payment form"
+msgstr "Formulario de asignación de pago"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_attachment_count
+msgid "Attachment Count"
+msgstr "Cantidad de archivos adjuntos"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_payment_register__type__bonos
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_generate_wizard__type__bonos
+msgid "Bonos"
+msgstr "Bonos"
+
+#. module: ftn_remittance_ee
+#: model:remittance.stage,name:ftn_remittance_ee.stage_5
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_export_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_register_payment_form
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_remittance_generate_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Canceled"
+msgstr "Cancelado"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__denied_reason__bm
+msgid "Cancellation by administrative management"
+msgstr "Cancelación por gerencia administrativa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__denied_reason__om
+msgid "Cancellation by operations management"
+msgstr "Cancelación por gerencia de operaciones"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance__state__cancel
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__payment_type__cash
+msgid "Cash"
+msgstr "Efectivo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__denied_reason__cf
+msgid "Cash flow"
+msgstr "Flujo de efectivo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__pay_account
+msgid "Charge account"
+msgstr "Cuenta de cargo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__comment
+msgid "Comentario"
+msgstr "Comentario"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_move_inherit_form1
+msgid "Conciliar XML"
+msgstr "Conciliar XML"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Confirm"
+msgstr "Confirmar"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard__create_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__create_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__create_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__create_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__create_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__create_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard__create_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__create_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__create_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__create_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__create_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__create_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__create_date
+msgid "Created on"
+msgstr "Creado en"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__payment_type__credit
+msgid "Credit"
+msgstr "Crédito"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__currency_id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__currency_id
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__currency_usd
+msgid "Currency USD"
+msgstr "Moneda USD"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_kanban
+msgid "Delete"
+msgstr "Eliminar"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__description
+msgid "Description"
+msgstr "Descripción"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__journal_id
+msgid "Diario de Pago"
+msgstr ""
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard__display_name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__display_name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__display_name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__display_name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__display_name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__display_name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__line_stage__done
+msgid "Done"
+msgstr "Hecho"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance__state__draft
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__line_stage__draft
+#: model:remittance.stage,name:ftn_remittance_ee.stage_0
+msgid "Draft"
+msgstr "Borrador"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_kanban
+msgid "Dropdown menu"
+msgstr "Menú desplegable"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_kanban
+msgid "Edit..."
+msgstr "Editar..."
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__email_cc
+msgid "Email cc"
+msgstr "CC de correo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__estado
+msgid "Estado"
+msgstr ""
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__excel_file
+msgid "Excel file"
+msgstr "Archivo Excel"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__export_type
+msgid "Export Type"
+msgstr "Tipo de exportación"
+
+#. module: ftn_remittance_ee
+#: model:ir.model,name:ftn_remittance_ee.model_account_remittance_export_wizard
+msgid "Export remittance"
+msgstr "Exportar remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__filename
+msgid "Filename"
+msgstr "Nombre de archivo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__final_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__final_date
+msgid "Final date"
+msgstr "Fecha final"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__fold
+msgid "Folded in Remittance Pipe"
+msgstr "Plegado en el flujo de remesas"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr "Ícono font-awesome, por ejemplo: fa-tasks"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_payment_register__type__expense
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_generate_wizard__type__expense
+msgid "Gastos y reembolsos"
+msgstr "Gastos y reembolsos"
+
+#. module: ftn_remittance_ee
+#. odoo-javascript
+#: code:addons/ftn_remittance_ee/static/src/xml/account_remittance_kanban_button.xml:0
+#: model:ir.actions.act_window,name:ftn_remittance_ee.action_remittance_generate_wizard
+#, python-format
+msgid "Generate Remittance"
+msgstr "Generar remesa"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Generate TXT"
+msgstr "Generar TXT"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#, python-format
+msgid "Generate TXT file"
+msgstr "Generar archivo TXT"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_remittance_generate_form
+msgid "Generate invoices"
+msgstr "Generar facturas"
+
+#. module: ftn_remittance_ee
+#: model:ir.model,name:ftn_remittance_ee.model_account_remittance_generate_wizard
+msgid "Generates remittance information"
+msgstr "Genera información de remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__has_message
+msgid "Has Message"
+msgstr "Tiene mensaje"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard__id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__id
+msgid "ID"
+msgstr "ID"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__activity_exception_icon
+msgid "Icon"
+msgstr "Ícono"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Ícono para indicar una actividad de excepción."
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcado, hay mensajes que requieren su atención."
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__message_has_error
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcado, algunos mensajes tienen error de entrega."
+
+#. module: ftn_remittance_ee
+#: model:remittance.stage,name:ftn_remittance_ee.stage_3
+msgid "In process"
+msgstr "En proceso"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__initial_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__initial_date
+msgid "Initial date"
+msgstr "Fecha inicial"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__invoice_id
+msgid "Invoice"
+msgstr "Factura"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#, python-format
+msgid "Invoice Line Report"
+msgstr "Reporte lineas de factura"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Invoices to pay"
+msgstr "Facturas por pagar"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_is_follower
+msgid "Is Follower"
+msgstr "Es seguidor"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Items"
+msgstr "Elementos"
+
+#. module: ftn_remittance_ee
+#: model:ir.model,name:ftn_remittance_ee.model_account_move
+msgid "Journal Entry"
+msgstr "Asiento contable"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__denied_reason__ls
+msgid "Lack of support"
+msgstr "Falta de soporte"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard____last_update
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance____last_update
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard____last_update
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard____last_update
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line____last_update
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage____last_update
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag____last_update
+msgid "Last Modified on"
+msgstr "Última modificación en"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard__write_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__write_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__write_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__write_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__write_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__write_uid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_register_payment_wizard__write_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__write_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__write_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__write_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__write_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__write_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__write_date
+msgid "Last Updated on"
+msgstr "Última actualización en"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__line_stage
+msgid "Line stage"
+msgstr "Etapa de línea"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__line_ids
+msgid "Lines"
+msgstr "Líneas"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_bank_statement_line__ready_to_pay
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_move__ready_to_pay
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment__ready_to_pay
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Lista para pago"
+msgstr "Lista para pago"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_main_attachment_id
+msgid "Main Attachment"
+msgstr "Archivo adjunto principal"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de entrega de mensaje"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_line__denied_reason__bd
+msgid "Missing or incorrect bank details"
+msgstr "Datos bancarios faltantes o incorrectos"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__currency_id
+msgid "Moneda"
+msgstr "Moneda"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Fecha límite de mi actividad"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_export_wizard__name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__name
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#, python-format
+msgid "New"
+msgstr "Nuevo"
+
+#. module: ftn_remittance_ee
+#. odoo-javascript
+#: code:addons/ftn_remittance_ee/static/src/xml/account_remittance_kanban_button.xml:0
+#: code:addons/ftn_remittance_ee/static/src/xml/generate_remittance_buttons.xml:0
+#, python-format
+msgid "New Remittance"
+msgstr "Nueva remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Fecha límite de la próxima actividad"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__activity_summary
+msgid "Next Activity Summary"
+msgstr "Resumen de próxima actividad"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo de próxima actividad"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_bank_statement_line__next_due_amount
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_move__next_due_amount
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment__next_due_amount
+msgid "Next Due Amount"
+msgstr ""
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_bank_statement_line__next_due_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_move__next_due_date
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment__next_due_date
+msgid "Next Due Date"
+msgstr ""
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren acción"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de entrega"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Pagos"
+msgstr "Pagos"
+
+#. module: ftn_remittance_ee
+#: model:remittance.stage,name:ftn_remittance_ee.stage_4
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Paid"
+msgstr "Pagado"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__partner_id
+msgid "Partner"
+msgstr "Contacto"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__payer_id
+msgid "Payer"
+msgstr "Pagador"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__payment_count
+msgid "Payment Count"
+msgstr "Pagos"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__payment_terms
+msgid "Payment Terms"
+msgstr "Terminos de pago"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__payment_type
+msgid "Payment type"
+msgstr "Tipo de pago"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__period
+msgid "Period"
+msgstr "Periodo"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Periodo:"
+msgstr "Periodo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance__state__posted
+msgid "Posted"
+msgstr "Publicado"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_kanban
+msgid "Prepared by:"
+msgstr "Elaborada por:"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__project_id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__project_id
+msgid "Project"
+msgstr "Proyecto"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_kanban
+msgid "Project:"
+msgstr "Proyecto"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_payment_register__type__supplier
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_generate_wizard__type__supplier
+msgid "Proveedores"
+msgstr "Proveedores"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Proyecto:"
+msgstr "Proyecto:"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__allow_approve
+msgid "Puede aprobar"
+msgstr "Puede aprobar"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__purchase_id
+msgid "Purchase"
+msgstr "Orden de compra"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__ready_to_pay
+msgid "Ready for payment"
+msgstr "Lista para pago"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Rechazada"
+msgstr "Rechazada"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#: model:ir.model,name:ftn_remittance_ee.model_account_payment_register
+#, python-format
+msgid "Register Payment"
+msgstr "Registrar pago"
+
+#. module: ftn_remittance_ee
+#: model:ir.model,name:ftn_remittance_ee.model_account_register_payment_wizard
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Register payment"
+msgstr "Registrar pago"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__denied_reason
+msgid "Rejection reason"
+msgstr "Razon de rechazo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment_register__remittance_payment
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_line__remittance_id
+msgid "Remesa"
+msgstr "Remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.ui.menu,name:ftn_remittance_ee.remittances_menu
+msgid "Remesas"
+msgstr "Remesas"
+
+#. module: ftn_remittance_ee
+#: model:ir.actions.report,name:ftn_remittance_ee.action_report_account_remittance
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_bank_statement_line__remittance_id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_move__remittance_id
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment__remittance_id
+#: model:ir.ui.menu,name:ftn_remittance_ee.menu_finance_remittance
+msgid "Remittance"
+msgstr "Remesa"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_analytic_account_details
+msgid "Remittance Approvers"
+msgstr "Aprobadores de Remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model,name:ftn_remittance_ee.model_remittance_stage
+msgid "Remittance Stage"
+msgstr "Etapa de remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.actions.act_window,name:ftn_remittance_ee.action_open_generate
+msgid "Remittance generation"
+msgstr "Generacion de remesa"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.view_account_remittance_generate_form
+msgid "Remittance generation form"
+msgstr "Formulario de generacion de remesa"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_line_view_form
+msgid "Remittance line"
+msgstr "Linea de remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__tag_ids
+msgid "Remittance tag"
+msgstr "Etiquetas"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__remittance_total
+msgid "Remittance total"
+msgstr "Total remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.actions.act_window,name:ftn_remittance_ee.action_remittance_stage
+msgid "Remittance's Stage"
+msgstr "Etapa remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.ui.menu,name:ftn_remittance_ee.submenu_finance_remittance
+msgid "Remittance's stage"
+msgstr "Etapa de remesa"
+
+#. module: ftn_remittance_ee
+#: model:ir.actions.act_window,name:ftn_remittance_ee.action_remittances
+msgid "Remittances"
+msgstr "Remesas"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Responsable:"
+msgstr "Responsable:"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__responsible_id
+msgid "Responsible"
+msgstr "Responsible"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__activity_user_id
+msgid "Responsible User"
+msgstr "Usuario responsable"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de envio SMS"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Semana 29"
+msgstr "Semana 29"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Semana 32 P62"
+msgstr "Semana 32 P62"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_stage__sequence
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__stage_id
+msgid "Stage"
+msgstr "Etapa"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__state
+msgid "Status"
+msgstr "Estado"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr "Actividades planeadas"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_remittance_tag__name
+msgid "Tag"
+msgstr "Tag"
+
+#. module: ftn_remittance_ee
+#: model:ir.model,name:ftn_remittance_ee.model_remittance_tag
+msgid "Tags for remittance"
+msgstr "Etiquetas de remesa"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/wizards/account_remittance_generate_wizard.py:0
+#, python-format
+msgid "There are no invoices to pay"
+msgstr "No hay facturas para pagar"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#, python-format
+msgid "This remittance is already approved"
+msgstr "Esta remesa ya esta aprobada"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance_generate_wizard__type
+msgid "Tipo de Remesa"
+msgstr "Tipo de Remesa"
+
+#. module: ftn_remittance_ee
+#: model:remittance.stage,name:ftn_remittance_ee.stage_1
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "To approve"
+msgstr ""
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Total MXM:"
+msgstr "Total MXM:"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__total_mxn
+msgid "Total MXN"
+msgstr "Total MXN"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Total Remesa:"
+msgstr "Total Remesa:"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__total_usd
+msgid "Total USD"
+msgstr "Total USD"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.report_remittance_document
+msgid "Total USD:"
+msgstr "Total USD:"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_kanban
+msgid "Total:"
+msgstr "Total:"
+
+#. module: ftn_remittance_ee
+#: model:res.groups,name:ftn_remittance_ee.group_account_treasure
+msgid "Treasure"
+msgstr "Tesoreria"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment_register__type
+msgid "Type"
+msgstr "Tipo"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Type of the exception activity on record."
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_bank_statement_line__supplier_uuid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_move__supplier_uuid
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment__supplier_uuid
+msgid "UUID"
+msgstr "UUID"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__user_id
+msgid "User"
+msgstr "Usuario"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "Validar Estado SAT"
+msgstr "Validar Estado SAT"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_remittance__website_message_ids
+msgid "Website Messages"
+msgstr "Website Messages"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,help:ftn_remittance_ee.field_account_remittance__website_message_ids
+msgid "Website communication history"
+msgstr "Website communication history"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "XLSX"
+msgstr "XLSX"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_bank_statement_line__uuid_reconciled
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_move__uuid_reconciled
+#: model:ir.model.fields,field_description:ftn_remittance_ee.field_account_payment__uuid_reconciled
+msgid "XML Validado"
+msgstr "XML Validado"
+
+#. module: ftn_remittance_ee
+#: model:ir.model.fields.selection,name:ftn_remittance_ee.selection__account_remittance_export_wizard__export_type__xlsx
+msgid "Xlsx"
+msgstr "Xlsx"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/wizards/account_register_payment_wizard.py:0
+#, python-format
+msgid "Your amount to pay must be greater than zero"
+msgstr "La cantidad a pagar debe ser mayor a cero"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/wizards/account_register_payment_wizard.py:0
+#, python-format
+msgid "Your amount to pay must be less than %s"
+msgstr "Your amount to pay must be less than %s"
+
+#. module: ftn_remittance_ee
+#. odoo-python
+#: code:addons/ftn_remittance_ee/models/account_remittance.py:0
+#, python-format
+msgid "Your user is not authorized to approve this remittance"
+msgstr "El usuario no esta autorizado para aprobar esta remesa"
+
+#. module: ftn_remittance_ee
+#: model_terms:ir.ui.view,arch_db:ftn_remittance_ee.account_remittance_view_form
+msgid "¿Desea cancelar la remesa?"
+msgstr "¿Desea cancelar la remesa?"
+

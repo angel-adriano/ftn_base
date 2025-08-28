@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_remittance_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <div class="oe_structure"/>
+                <table class="table table-sm o_main_table">
+                    <tbody>
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <h2><strong t-field="o.name"/></h2>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td id="project_id" colspan="4">
+                                Proyecto: <span t-field="o.project_id"/>
+                            </td>
+                            <td id="total_mxn" colspan="4">
+                                Total MXM: <span t-field="o.total_mxn"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td id="period" colspan="4">
+                                Periodo: <span t-field="o.period"/>
+                            </td>
+                            <td id="total_usd" colspan="4">
+                                Total USD: <span t-field="o.total_usd"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td id="responsible" colspan="4">
+                                Responsable: <span t-field="o.responsible_id.name"/>
+                            </td>
+                            <td id="remittance_total" colspan="4">
+                                Total Remesa: <span t-field="o.remittance_total"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="8"><span>Línea de Remesa</span></td>
+                        </tr>
+                        <tr class="tr-line">
+                            <td><strong># Factura</strong></td>
+                            <td><strong>Proveedor</strong></td>
+
+                            <td><strong>Descripción</strong></td>
+                            <td><strong>Monto pendiente</strong></td>
+                            <td><strong>Total a pagar</strong></td>
+                            <td><strong>Estado</strong></td>
+                            <td><strong>Motivo de rechazo</strong></td>
+                        </tr>
+                        <t t-set="total_residual" t-value="0.0"/>
+                        <t t-set="total_to_pay" t-value="0.0"/>
+                        <tr t-foreach="o.line_ids" t-as="line">
+                            <t t-set="total_residual" t-value="total_residual + line.amount_residual"/>
+                            <t t-set="total_to_pay" t-value="total_to_pay + line.amount_to_pay"/>
+                            <td><span t-field="line.invoice_id.name"/></td>
+                            <td><span t-field="line.invoice_id.partner_id.name"/></td>
+
+                            <td><span t-field="line.description"/></td>
+                            <td><span t-field="line.amount_residual"/></td>
+                            <td><span t-field="line.amount_to_pay"/></td>
+                            <td>
+                                <t t-if="line.ready_to_pay">Lista para pago</t>
+                                <t t-else="">Rechazada</t>
+                            </td>
+                            <td>
+                                <t t-if="not line.ready_to_pay">
+                                    <span t-field="line.denied_reason"/>
+                                </t>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><span t-esc="total_residual" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                            <td colspan="3"><span t-esc="total_to_pay" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_remittance">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="ftn_remittance.report_remittance_document" t-lang="o.responsible_id.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_remittance_generate_form" model="ir.ui.view">
+        <field name="name">account.remittance.generate.wizard.form</field>
+        <field name="model">account.remittance.generate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Remittance generation form">
+                <group>
+                    <group>
+                        <field name="type" invisible="1"/>
+                        <field name="final_date" required="1"/>
+                        <field name="project_id"/>
+                        <field name="currency_id" required="1"/>
+                    </group>
+                </group>
+                <footer>
+                    <button string="Generate invoices" name="action_generate_invoices" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_remittance_generate_wizard" model="ir.actions.act_window">
+        <field name="name">Generate Remittance</field>
+        <field name="res_model">account.remittance.generate.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_open_generate" model="ir.actions.act_window">
+        <field name="name">Remittance generation</field>
+        <field name="res_model">account.remittance.generate.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_account_remittance_generate_form"/>
+        <field name="target">new</field>
+        <field name="groups_id" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="binding_model_id" ref="ftn_remittance.model_account_remittance" />
+        <field name="binding_view_types">list</field>
+    </record>
+</odoo>

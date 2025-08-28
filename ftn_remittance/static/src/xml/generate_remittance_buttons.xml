@@ -1,0 +1,17 @@
+<templates xml:space="preserve">
+    <t t-name="AccountRemittance.generate_remittance_button" owl="1">
+        <button type="button" class="btn btn-secondary"
+                t-on-click="onClickGenerateRemittance">
+            New Remittance
+        </button>
+    </t>
+
+    <t t-name="AccountRemittanceKanbanView.buttons"
+       t-inherit="web.KanbanView.Buttons"
+       t-inherit-mode="primary"
+       owl="1">
+        <xpath expr="//div[@t-if='props.showButtons']" position="inside">
+            <t t-call="AccountRemittance.generate_remittance_button"/>
+        </xpath>
+    </t>
+</templates>
