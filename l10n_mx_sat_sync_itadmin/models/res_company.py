@@ -230,7 +230,10 @@ class ResCompany(models.Model):
         else:
            solicitud = {'id_solicitud': solicitud_ws_ids.id_solicitud, 'cod_estatus': solicitud_ws_ids.cod_estatus, 'mensaje': solicitud_ws_ids.mensaje}
 
-        self.save_downloaded_content(esignature, sat_obj, solicitud, False)
+        if solicitud_ws_ids.cod_estatus == '5000':
+            self.save_downloaded_content(esignature, sat_obj, solicitud, False)
+        else:
+            solicitud_ws_ids.write({'state':'cancel'})
 
         solo_documentos_de_proveedor = self.env['ir.config_parameter'].sudo().get_param('l10n_mx_sat_sync_itadmin.solo_documentos_de_proveedor')
         if not solo_documentos_de_proveedor:
@@ -250,13 +253,11 @@ class ResCompany(models.Model):
                                                                   'rfc_emisor': True})
            else:
                 solicitud = {'id_solicitud': solicitud_ws_ids.id_solicitud, 'cod_estatus': solicitud_ws_ids.cod_estatus, 'mensaje': solicitud_ws_ids.mensaje}
-           self.save_downloaded_content(esignature, sat_obj, solicitud, True)
 
-        #if not self.last_cfdi_fetch_date:
-        #    self.last_cfdi_fetch_date = datetime.now()
-        #else:
-        #    if date_to > self.last_cfdi_fetch_date:
-        #        self.last_cfdi_fetch_date = datetime.now()
+           if solicitud_ws_ids.cod_estatus == '5000':
+               self.save_downloaded_content(esignature, sat_obj, solicitud, True)
+           else:
+               solicitud_ws_ids.write({'state':'cancel'})
         return
 
     def save_downloaded_content(self, esignature, sat_obj, solicitud, customer_documents):
@@ -290,11 +291,8 @@ class ResCompany(models.Model):
                        content.append(descarga['paquete_b64'])
                        solicitud_ws.write({'paquete_b64': descarga['paquete_b64'],})
                 solicitud_ws.write({'state':'done'})
-        elif estado_verificacion >= 4: # or estado_verificacion == 0:
+        elif estado_verificacion >= 5:
                 solicitud_ws.write({'state':'done'})
-        if solicitud_ws.fecha:
-           if datetime.today() > solicitud_ws.fecha + timedelta(days=3):
-               solicitud_ws.write({'state':'cancel'})
 
         if not content:
             return True
