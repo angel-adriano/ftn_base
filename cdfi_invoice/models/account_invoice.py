@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
-    factura_cfdi = fields.Boolean('Factura CFDI')
+    factura_cfdi = fields.Boolean('Factura CFDI', copy=False)
     tipo_comprobante = fields.Selection(
         selection=[('I', 'Ingreso'),
                    ('E', 'Egreso'),
@@ -44,17 +44,17 @@ class AccountMove(models.Model):
                    ('solicitud_rechazada', 'Cancelación rechazada'), ],
         string=_('Estado de factura'),
         default='factura_no_generada',
-        readonly=True
+        readonly=True, copy=False
     )
     pdf_cdfi_invoice = fields.Binary("CDFI Invoice")
-    qrcode_image = fields.Binary("QRCode")
-    numero_cetificado = fields.Char(string=_('Numero de cetificado'))
-    cetificaso_sat = fields.Char(string=_('Cetificao SAT'))
-    folio_fiscal = fields.Char(string=_('Folio Fiscal'), readonly=True)
-    fecha_certificacion = fields.Char(string=_('Fecha y Hora Certificación'))
-    cadena_origenal = fields.Char(string=_('Cadena Origenal del Complemento digital de SAT'))
-    selo_digital_cdfi = fields.Char(string=_('Selo Digital del CDFI'))
-    selo_sat = fields.Char(string=_('Selo del SAT'))
+    qrcode_image = fields.Binary("QRCode", copy=False)
+    numero_cetificado = fields.Char(string=_('Numero de cetificado'), copy=False)
+    cetificaso_sat = fields.Char(string=_('Cetificao SAT'), copy=False)
+    folio_fiscal = fields.Char(string=_('Folio Fiscal'), readonly=True, copy=False)
+    fecha_certificacion = fields.Char(string=_('Fecha y Hora Certificación'), copy=False)
+    cadena_origenal = fields.Char(string=_('Cadena Origenal del Complemento digital de SAT'), copy=False)
+    selo_digital_cdfi = fields.Char(string=_('Selo Digital del CDFI'), copy=False)
+    selo_sat = fields.Char(string=_('Selo del SAT'), copy=False)
     moneda = fields.Char(string=_('Moneda'))
     tipocambio = fields.Char(string=_('TipoCambio'))
     # folio = fields.Char(string=_('Folio'))
@@ -63,8 +63,8 @@ class AccountMove(models.Model):
     amount_to_text = fields.Char('Amount to Text', compute='_get_amount_to_text',
                                  size=256,
                                  help='Amount of the invoice in letter')
-    qr_value = fields.Char(string=_('QR Code Value'))
-    fecha_factura = fields.Datetime(string=_('Fecha Factura'))
+    qr_value = fields.Char(string=_('QR Code Value'), copy=False)
+    fecha_factura = fields.Datetime(string=_('Fecha Factura'), copy=False)
     # serie_emisor = fields.Char(string=_('A'))
     tipo_relacion = fields.Selection(
         selection=[('01', 'Nota de crédito de los documentos relacionados'),
@@ -134,37 +134,13 @@ class AccountMove(models.Model):
                values['tipo_comprobante'] = 'E'
                values['uso_cfdi_id'] = inv.env['catalogo.uso.cfdi'].sudo().search([('code', '=', 'G02')]).id
                values['tipo_relacion'] = '01'
-               values['fecha_factura'] = None
-               values['qrcode_image'] = None
-               values['numero_cetificado'] = None
-               values['cetificaso_sat'] = None
-               values['selo_digital_cdfi'] = None
-               values['folio_fiscal'] = None
-               values['estado_factura'] = 'factura_no_generada'
-               values['factura_cfdi'] = False
         return values
-
-    @api.returns('self', lambda value: value.id)
-    def copy(self, default=None):
-        default = dict(default or {})
-        default['estado_factura'] = 'factura_no_generada'
-        default['folio_fiscal'] = ''
-        default['factura_cfdi'] = False
-        default['fecha_factura'] = None
-        default['qrcode_image'] = None
-        default['numero_cetificado'] = None
-        default['cetificaso_sat'] = None
-        default['selo_digital_cdfi'] = None
-        default['folio_fiscal'] = None
-        return super(AccountMove, self).copy(default=default)
 
     @api.depends('name')
     def _get_number_folio(self):
         for record in self:
             if record.name:
-                record.number_folio = ''.join(re.findall(r'\d+', record.name))
-            else:
-                record.number_folio = False
+                record.number_folio = record.name.replace('INV', '').replace('/', '')
 
     @api.depends('amount_total', 'currency_id')
     def _get_amount_to_text(self):
@@ -238,7 +214,7 @@ class AccountMove(models.Model):
         if not self.fecha_factura:
             self.fecha_factura = datetime.datetime.now()
 
-        if self.currency_id.name == 'MXN':
+        if self.currency_id.name.upper() == 'MXN':
             tipocambio = 1
         else:
             tipocambio = self.set_decimals(1 / self.currency_id.with_context(date=self.invoice_date).rate,
@@ -252,7 +228,7 @@ class AccountMove(models.Model):
                 'forma_pago': self.forma_pago_id.code,
                 'subtotal': self.amount_untaxed,
                 'descuento': 0,
-                'moneda': self.currency_id.name,
+                'moneda': self.currency_id.name.upper(),
                 'tipocambio': tipocambio,
                 'total': self.amount_total,
                 'tipocomprobante': self.tipo_comprobante,
@@ -319,9 +295,21 @@ class AccountMove(models.Model):
         only_exento = True
         invoice_lines = []
         negative_lines = []
+        negative_lines_subtotal = []
+        tax_incl_neg = False
         for line in self.invoice_line_ids:
+            if line.display_type in ('line_section', 'line_note'):
+                continue
             if line.price_subtotal <= 0:
-              negative_lines.append(abs(line.price_subtotal))
+                for line_tax in line.tax_ids:
+                    if line_tax.price_include:
+                        tax_incl_neg = True
+                if tax_incl_neg:
+                    negative_lines.append(abs(line.price_total))
+                    negative_lines_subtotal.append(abs(line.price_subtotal))
+                else:
+                    negative_lines.append(abs(line.price_subtotal))
+                    negative_lines_subtotal.append(abs(line.price_subtotal))
 
         for line in self.invoice_line_ids:
             if line.display_type in ('line_section', 'line_note'):
@@ -330,7 +318,7 @@ class AccountMove(models.Model):
                 self.write({'proceso_timbrado': False})
                 self.env.cr.commit()
                 raise UserError(_('Hay una línea sin producto.'))
-            if line.price_unit <= 0:
+            if line.price_unit <= 0 and self.exportacion == '01':
                 continue
 
             if not line.product_id.clave_producto:
@@ -345,20 +333,23 @@ class AccountMove(models.Model):
             promocion = False
 
             if negative_lines:
-               pos = 0
-               for promo_disc in negative_lines:
-                  if promo_disc  <= line.price_subtotal:
-                      #price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
-                      price_wo_discount = round(line.price_unit - (promo_disc / line.quantity), no_decimales_prod)
-                      promo = promo_disc
-                      promocion = True
-                      negative_lines.pop(pos)
-                      break
-                  else:
-                      price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
-                  pos += 1
+                pos = 0
+                for promo_disc in negative_lines:
+                    if promo_disc  <= line.price_subtotal:
+                        price_wo_discount = line.price_unit - (promo_disc / line.quantity)
+                        if tax_incl_neg:
+                            promo = negative_lines_subtotal[pos]
+                        else:
+                            promo = promo_disc
+                        promocion = True
+                        negative_lines.pop(pos)
+                        negative_lines_subtotal.pop(pos)
+                        break
+                    else:
+                        price_wo_discount = line.price_unit * (1 - (line.discount / 100.0))
+                    pos += 1
             else:
-               price_wo_discount = round(line.price_unit * (1 - (line.discount / 100.0)), no_decimales_prod)
+                price_wo_discount = line.price_unit * (1 - (line.discount / 100.0))
 
             taxes_prod = line.tax_ids.compute_all(price_wo_discount, line.currency_id, line.quantity,
                                                   product=line.product_id, partner=line.move_id.partner_id)
@@ -453,7 +444,11 @@ class AccountMove(models.Model):
                discount_prod = self.roundTraditional((line.price_unit * line.quantity - tax_included) - (line.price_subtotal - promo), no_decimales_prod) if line.discount or promo > 0 else 0
             else:
                discount_prod = self.roundTraditional((line.price_unit * line.quantity - tax_included) - line.price_subtotal, no_decimales_prod) if line.discount else 0
-            precio_unitario = self.roundTraditional((line.price_unit * line.quantity - tax_included) / line.quantity, no_decimales_prod)
+            if line.price_unit <= 1:
+                precio_unitario = (line.price_unit * line.quantity - tax_included) / line.quantity
+            else:
+                precio_unitario = self.roundTraditional((line.price_unit * line.quantity - tax_included) / line.quantity, no_decimales_prod)
+
             self.subtotal += total_wo_discount
             self.discount += discount_prod
 
@@ -485,6 +480,10 @@ class AccountMove(models.Model):
             components = []
             if line.product_id.product_parts_ids:
                 for component in line.product_id.product_parts_ids:
+                    if not component.product_id.clave_producto:
+                        raise UserError(_('El producto %s tiene un componente sin clave de producto.') % (line.product_id.name))
+                    if not component.product_id.name:
+                        raise UserError(_('El producto %s tiene un componente sin nombre.') % (line.product_id.name))
                     components.append({'ClaveProdServ': component.product_id.clave_producto,
                                       'Cantidad': component.cantidad,
                                       'Descripcion': self.clean_text(component.product_id.name),
@@ -502,6 +501,11 @@ class AccountMove(models.Model):
                    objetoimp = '01'
 
             product_string = line.product_id.code and line.product_id.code[:100] or ''
+            if not line.name:
+                self.write({'proceso_timbrado': False})
+                self.env.cr.commit()
+                raise UserError(_('El producto %s tiene vacío el campo etiqueta.') % (line.product_id.name))
+
             if product_string == '':
                 if line.name.find(']') > 0:
                     product_string = line.name[line.name.find('[') + len('['):line.name.find(']')] or ''
@@ -730,12 +734,10 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                 raise UserError(_('Error para timbrar factura, Factura ya generada y cancelada.'))
 
             values = invoice.to_json()
-            if invoice.company_id.proveedor_timbrado == 'multifactura':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/invoice')
-            elif invoice.company_id.proveedor_timbrado == 'multifactura2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/invoice')
-            elif invoice.company_id.proveedor_timbrado == 'multifactura3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/invoice')
+            if invoice.company_id.proveedor_timbrado == 'servidor':
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/invoice')
+            elif invoice.company_id.proveedor_timbrado == 'servidor2':
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/invoice')
             else:
                 invoice.write({'proceso_timbrado': False})
                 self.env.cr.commit()
@@ -744,7 +746,7 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
 
             try:
                 response = requests.post(url,
-                                         auth=None, verify=False, data=json.dumps(values),
+                                         auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
             except Exception as e:
                 error = str(e)
@@ -776,7 +778,7 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                         'name': file_name,
                         'datas': json_response['factura_xml'],
                         # 'datas_fname': file_name,
-                        'res_model': self._name,
+                        'res_model': invoice._name,
                         'res_id': invoice.id,
                         'type': 'binary'
                     })
@@ -818,19 +820,17 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                     'motivo': self.env.context.get('motivo_cancelacion', '02'),
                     'foliosustitucion': self.env.context.get('foliosustitucion', ''),
                 }
-                if self.company_id.proveedor_timbrado == 'multifactura':
-                    url = '%s' % ('http://facturacion.itadmin.com.mx/api/refund')
-                elif invoice.company_id.proveedor_timbrado == 'multifactura2':
-                    url = '%s' % ('http://facturacion2.itadmin.com.mx/api/refund')
-                elif invoice.company_id.proveedor_timbrado == 'multifactura3':
-                    url = '%s' % ('http://facturacion3.itadmin.com.mx/api/refund')
+                if invoice.company_id.proveedor_timbrado == 'servidor':
+                    url = '%s' % ('https://facturacion.itadmin.com.mx/api/refund')
+                elif invoice.company_id.proveedor_timbrado == 'servidor2':
+                    url = '%s' % ('https://facturacion2.itadmin.com.mx/api/refund')
                 else:
                     raise UserError(
                         _('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
                 try:
                     response = requests.post(url,
-                                             auth=None, verify=False, data=json.dumps(values),
+                                             auth=None, data=json.dumps(values),
                                              headers={"Content-type": "application/json"})
                 except Exception as e:
                     error = str(e)
@@ -896,19 +896,17 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                 'xml': xml_file.datas.decode("utf-8"),
             }
 
-            if invoice.company_id.proveedor_timbrado == 'multifactura':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/consulta-cacelar')
-            elif invoice.company_id.proveedor_timbrado == 'multifactura2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/consulta-cacelar')
-            elif invoice.company_id.proveedor_timbrado == 'multifactura3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/consulta-cacelar')
+            if invoice.company_id.proveedor_timbrado == 'servidor':
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/consulta-cacelar')
+            elif invoice.company_id.proveedor_timbrado == 'servidor2':
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/consulta-cacelar')
             else:
                 raise UserError(
                     _('Error, falta seleccionar el servidor de timbrado en la configuración de la compañía.'))
 
             try:
                 response = requests.post(url,
-                                         auth=None, verify=False, data=json.dumps(values),
+                                         auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
 
                 if "Whoops, looks like something went wrong." in response.text:
@@ -964,16 +962,14 @@ Si requiere timbrar la factura nuevamente deshabilite el checkbox de "Proceso de
                 'contrasena': invoice.company_id.contrasena,
             }
             url = ''
-            if invoice.company_id.proveedor_timbrado == 'multifactura':
-                url = '%s' % ('http://facturacion.itadmin.com.mx/api/command')
-            elif invoice.company_id.proveedor_timbrado == 'multifactura2':
-                url = '%s' % ('http://facturacion2.itadmin.com.mx/api/command')
-            elif invoice.company_id.proveedor_timbrado == 'multifactura3':
-                url = '%s' % ('http://facturacion3.itadmin.com.mx/api/command')
+            if invoice.company_id.proveedor_timbrado == 'servidor':
+                url = '%s' % ('https://facturacion.itadmin.com.mx/api/command')
+            elif invoice.company_id.proveedor_timbrado == 'servidor2':
+                url = '%s' % ('https://facturacion2.itadmin.com.mx/api/command')
             if not url:
                 return
             try:
-                response = requests.post(url, auth=None, verify=False, data=json.dumps(values),
+                response = requests.post(url, auth=None, data=json.dumps(values),
                                          headers={"Content-type": "application/json"})
 
                 if "Whoops, looks like something went wrong." in response.text:
