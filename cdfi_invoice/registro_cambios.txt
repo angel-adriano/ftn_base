@@ -1,0 +1,29 @@
+v19.1.9
+-Cambio en redondeo al subir el XML
+
+v19.1.8
+-Cambio de redondo a subtotal y total base de impuestos
+
+v19.1.7
+-Agregar estados de cancelación para Pagos
+
+v19.1.6
+-Cargar EDI document en account move.
+
+v19.1.5
+-Corrección de redondeos.
+
+v19.1.4
+-Corrección al importar una orden de compra.
+
+v19.1.3
+-Corrección documento relacionado en reporte de factura.
+
+v19.1.2
+-Corrección al RFC y código postal para clientes extranjeros en el complemento de pago.
+
+v19.1.1
+-Aumento a 6 decimales a cifras de líneas de productos e impuestos, se elimina variable número decimales del modelo de moneda.
+
+v19.1.0
+-Versión de producción
