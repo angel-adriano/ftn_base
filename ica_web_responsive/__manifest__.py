@@ -6,7 +6,6 @@
     'author':"Agga, IdeaCode Academy",
     'version': '18.0.1.0',
     'depends': ['web', 'base_setup'],
-    'auto_install': ['web'],
     'data': [
         'views/webclient_templates.xml',
     ],
