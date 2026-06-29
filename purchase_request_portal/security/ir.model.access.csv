@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_purchase_request_public,access_purchase_request_public,purchase_request.model_purchase_request,base.group_public,1,0,1,0
+access_purchase_request_line_public,access_purchase_request_line_public,purchase_request.model_purchase_request_line,base.group_public,1,0,1,0
+access_hr_department_public,access_hr_department_public,hr.model_hr_department,base.group_public,1,0,0,0
+access_hr_employee_public,access_hr_employee_public,hr.model_hr_employee,base.group_public,1,0,0,0
+access_uom_uom_public,access_uom_uom_public,uom.model_uom_uom,base.group_public,1,0,0,0

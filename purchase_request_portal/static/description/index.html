@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Purchase Request Portal - Odoo 14</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #875a7b;
+        }
+        .feature {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-left: 4px solid #875a7b;
+        }
+        .feature h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Purchase Request Portal</h1>
+    <p>Allow employees to submit purchase requests without being registered as Odoo users.</p>
+
+    <div class="feature">
+        <h3>🌐 Public Access</h3>
+        <p>Employees can access the portal without logging in to Odoo.</p>
+    </div>
+
+    <div class="feature">
+        <h3>🏢 Department-based Filtering</h3>
+        <p>Select department first, then choose from employees in that department.</p>
+    </div>
+
+    <div class="feature">
+        <h3>📝 Easy Form Interface</h3>
+        <p>Simple, clean interface for submitting purchase requests with multiple product lines.</p>
+    </div>
+
+    <div class="feature">
+        <h3>🔔 Automatic Notifications</h3>
+        <p>Configured user receives notifications when new requests are submitted.</p>
+    </div>
+
+    <div class="feature">
+        <h3>📱 Responsive Design</h3>
+        <p>Works on desktop, tablet, and mobile devices.</p>
+    </div>
+
+    <h2>Configuration</h2>
+    <ol>
+        <li>Install the module</li>
+        <li>Go to Settings → Purchase</li>
+        <li>Configure the notification user in the Purchase Request Portal section</li>
+        <li>Access the portal at: <code>/purchase/request/portal</code></li>
+    </ol>
+
+    <h2>Dependencies</h2>
+    <ul>
+        <li>purchase_request</li>
+        <li>purchase_request_department</li>
+        <li>hr (Human Resources)</li>
+        <li>portal</li>
+        <li>web</li>
+    </ul>
+</body>
+</html>

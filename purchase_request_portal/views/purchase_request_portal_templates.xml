@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Portal Template -->
+        <template id="portal_form" name="Purchase Request Portal Form">
+            <t t-call="portal.frontend_layout">
+                <t t-set="additional_title">Purchase Request Portal</t>
+                <div id="wrap" class="oe_structure oe_empty">
+                    <div class="container mt-5">
+                        <div class="row">
+                            <div class="col-lg-8 offset-lg-2">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-primary text-white">
+                                        <h3 class="mb-0">
+                                            <i class="fa fa-shopping-cart mr-2"></i>
+                                            Submit Purchase Request
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Success Message -->
+                                        <t t-if="success">
+                                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                                <strong>Success!</strong> Your purchase request has been submitted successfully.
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&amp;times;</span>
+                                                </button>
+                                            </div>
+                                        </t>
+
+                                        <!-- Error Messages -->
+                                        <t t-if="error == 'missing_fields'">
+                                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                <strong>Error!</strong> Please fill in all required fields.
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&amp;times;</span>
+                                                </button>
+                                            </div>
+                                        </t>
+                                        <t t-if="error == 'no_lines'">
+                                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                <strong>Error!</strong> Please add at least one product line.
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&amp;times;</span>
+                                                </button>
+                                            </div>
+                                        </t>
+                                        <t t-if="error == 'submission_failed'">
+                                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                <strong>Error!</strong> Submission failed. Please try again or contact support.
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&amp;times;</span>
+                                                </button>
+                                            </div>
+                                        </t>
+
+                                        <!-- Form -->
+                                        <form action="/purchase/request/portal/submit" method="post" id="purchase_request_form">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                            <!-- Hidden template for UoMs -->
+                                            <select id="uom_template" style="display:none;">
+                                                <option value="">Select UoM...</option>
+                                                <t t-foreach="uoms" t-as="uom">
+                                                    <option t-att-value="uom.id" t-esc="uom.name"/>
+                                                </t>
+                                            </select>
+
+                                            <div class="form-group">
+                                                <label for="department_id" class="fw-bold">Department <span class="text-danger">*</span></label>
+                                                <select name="department_id" id="department_id" class="form-control" required="required">
+                                                    <option value="">Select Department...</option>
+                                                    <t t-foreach="departments" t-as="dept">
+                                                        <option t-att-value="dept.id" t-esc="dept.name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="employee_id" class="fw-bold">Employee <span class="text-danger">*</span></label>
+                                                <select name="employee_id" id="employee_id" class="form-control" required="required">
+                                                    <option value="">Select Employee...</option>
+                                                    <t t-foreach="employees" t-as="emp">
+                                                        <option t-att-value="emp.id" t-att-data-department-id="emp.department_id.id if emp.department_id else ''">
+                                                            <t t-esc="emp.name"/>
+                                                        </option>
+                                                    </t>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="date_required" class="fw-bold">Date Required <span class="text-danger">*</span></label>
+                                                <input type="date" name="date_required" id="date_required" class="form-control" required="required"/>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="description" class="fw-bold">Notes</label>
+                                                <textarea name="description" id="description" class="form-control" rows="3" placeholder="Enter any additional notes or comments..."></textarea>
+                                            </div>
+
+                                            <hr class="my-4"/>
+
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h5 class="mb-0">Request Lines</h5>
+                                                <button type="button" class="btn btn-sm btn-success" id="add_line_btn">
+                                                    <i class="fa fa-plus"></i> Add Line
+                                                </button>
+                                            </div>
+
+                                            <div id="request_lines_container">
+                                                <!-- Lines will be added here dynamically -->
+                                            </div>
+
+                                            <hr class="my-4"/>
+
+                                            <div class="form-group text-right">
+                                                <button type="submit" class="btn btn-primary btn-lg">
+                                                    <i class="fa fa-paper-plane mr-2"></i>
+                                                    Submit Request
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inline JavaScript for Portal Form -->
+                    <script type="text/javascript">
+                        // Wait for jQuery to be available
+                        (function() {
+                            function initPurchaseRequestPortal() {
+                                if (typeof jQuery === 'undefined') {
+                                    // jQuery not loaded yet, wait and try again
+                                    setTimeout(initPurchaseRequestPortal, 50);
+                                    return;
+                                }
+
+                                // jQuery is available, use it
+                                jQuery(document).ready(function($) {
+                                    'use strict';
+
+                                    console.log('Purchase Request Portal - JavaScript Loaded');
+
+                                    var lineCounter = 0;
+
+                                    // Function to add a new line
+                                    function addLine() {
+                                        var lineIndex = lineCounter;
+                                        lineCounter++;
+
+                                        // Get UOM options from template
+                                        var uomOptions = $('#uom_template').html() || '';
+
+                                        // Use template literals to avoid XML escaping issues
+                                        var lineHtml = `
+                                            &lt;div class="card mb-3 request-line-item"&gt;
+                                                &lt;div class="card-body"&gt;
+                                                    &lt;div class="row"&gt;
+                                                        &lt;div class="col-md-5"&gt;
+                                                            &lt;div class="form-group"&gt;
+                                                                &lt;label for="line_name_${lineIndex}"&gt;Producto/Descripcion &lt;span class="text-danger"&gt;*&lt;/span&gt;&lt;/label&gt;
+                                                                &lt;input type="text" name="line_name_${lineIndex}" id="line_name_${lineIndex}" class="form-control" required="required" placeholder="Ingresa la descripcion o el producto a solicitar"/&gt;
+                                                            &lt;/div&gt;
+                                                        &lt;/div&gt;
+                                                        &lt;div class="col-md-3"&gt;
+                                                            &lt;div class="form-group"&gt;
+                                                                &lt;label for="line_qty_${lineIndex}"&gt;Cantidad &lt;span class="text-danger"&gt;*&lt;/span&gt;&lt;/label&gt;
+                                                                &lt;input type="number" name="line_qty_${lineIndex}" id="line_qty_${lineIndex}" class="form-control" required="required" min="0.01" step="0.01" value="1.00"/&gt;
+                                                            &lt;/div&gt;
+                                                        &lt;/div&gt;
+                                                        &lt;div class="col-md-3"&gt;
+                                                            &lt;div class="form-group"&gt;
+                                                                &lt;label for="line_uom_${lineIndex}"&gt;Unidad &lt;span class="text-danger"&gt;*&lt;/span&gt;&lt;/label&gt;
+                                                                &lt;select name="line_uom_${lineIndex}" id="line_uom_${lineIndex}" class="form-control uom-select" required="required"&gt;
+                                                                    ${uomOptions}
+                                                                &lt;/select&gt;
+                                                            &lt;/div&gt;
+                                                        &lt;/div&gt;
+                                                        &lt;div class="col-md-1 d-flex align-items-center"&gt;
+                                                            &lt;button type="button" class="btn btn-danger btn-sm remove_line_btn mt-3"&gt;
+                                                                &lt;i class="fa fa-trash"&gt;&lt;/i&gt;
+                                                            &lt;/button&gt;
+                                                        &lt;/div&gt;
+                                                    &lt;/div&gt;
+                                                &lt;/div&gt;
+                                            &lt;/div&gt;
+                                        `;
+
+                                        $('#request_lines_container').append(lineHtml);
+                                        console.log('Line added, total lines:', lineCounter);
+                                    }
+
+                                    // Function to validate form before submission
+                                    function validateForm() {
+                                        console.log('=== Form Submission Validation ===');
+
+                                        // Get all line inputs
+                                        var lineInputs = $('input[name^="line_name_"]');
+                                        console.log('Total line name inputs found:', lineInputs.length);
+
+                                        // Log each line
+                                        lineInputs.each(function(index, input) {
+                                            var name = $(input).attr('name');
+                                            var value = $(input).val();
+                                            console.log('Line input:', name, '=', value);
+                                        });
+
+                                        // Check if we have at least one line with data
+                                        var hasValidLine = false;
+                                        lineInputs.each(function(index, input) {
+                                            if ($(input).val().trim() !== '') {
+                                                hasValidLine = true;
+                                            }
+                                        });
+
+                                        if (!hasValidLine) {
+                                            alert('Please add at least one product line!');
+                                            console.error('No valid lines found!');
+                                            return false;
+                                        }
+
+                                        console.log('Form validation passed, submitting...');
+                                        return true;
+                                    }
+
+                                    // Function to handle department change - filter employees based on data attribute
+                                    function onDepartmentChange() {
+                                        var departmentId = $('#department_id').val();
+                                        var $employeeSelect = $('#employee_id');
+
+                                        if (!departmentId) {
+                                            // If no department selected, hide all employees
+                                            $employeeSelect.find('option').each(function() {
+                                                if ($(this).val() !== '') {
+                                                    $(this).hide();
+                                                }
+                                            });
+                                            $employeeSelect.val('');
+                                            return;
+                                        }
+
+                                        // Loop through each option in the employee select
+                                        $employeeSelect.find('option').each(function() {
+                                            var $option = $(this);
+
+                                            // Skip the placeholder option
+                                            if ($option.val() === '') {
+                                                $option.show();
+                                                return;
+                                            }
+
+                                            // Get the department ID of the employee option
+                                            var employeeDepartmentId = $option.attr('data-department-id');
+
+                                            // Show or hide the option based on whether it matches the selected department ID
+                                            if (employeeDepartmentId === departmentId) {
+                                                $option.show();
+                                            } else {
+                                                $option.hide();
+                                            }
+                                        });
+
+                                        // Reset the employee select value
+                                        $employeeSelect.val('');
+
+                                        console.log('Department changed to:', departmentId);
+                                    }
+
+                                    // Add first line by default
+                                    addLine();
+
+                                    // Department change handler
+                                    $(document).on('change', '#department_id', onDepartmentChange);
+
+                                    // Add line button handler
+                                    $(document).on('click', '#add_line_btn', function(e) {
+                                        e.preventDefault();
+                                        addLine();
+                                    });
+
+                                    // Remove line button handler (using event delegation)
+                                    $(document).on('click', '.remove_line_btn', function(e) {
+                                        e.preventDefault();
+                                        $(this).closest('.request-line-item').remove();
+                                        console.log('Line removed');
+                                    });
+
+                                    // Run the filter function initially to hide all employees until department is selected
+                                    onDepartmentChange();
+                                });
+                            }
+
+                            // Start trying to initialize
+                            initPurchaseRequestPortal();
+                        })();
+                    </script>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

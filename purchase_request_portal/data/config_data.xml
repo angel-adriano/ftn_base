@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Default configuration parameter for notification user -->
+        <record id="purchase_request_notification_user_default" model="ir.config_parameter">
+            <field name="key">purchase_request_portal.notification_user_id</field>
+            <field name="value">2</field> <!-- Default to admin user, change as needed -->
+        </record>
+    </data>
+</odoo>

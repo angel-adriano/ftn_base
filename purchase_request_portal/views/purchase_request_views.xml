@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Add employee field to purchase request form -->
+        <record id="purchase_request_form_inherit_portal" model="ir.ui.view">
+            <field name="name">purchase.request.form.inherit.portal</field>
+            <field name="model">purchase.request</field>
+            <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+            <field name="arch" type="xml">
+                <!-- Add employee field after requested_by -->
+                <field name="requested_by" position="after">
+                    <field name="employee_id" invisible="requested_by != 4"/>
+                </field>
+            </field>
+        </record>
+
+        <!-- Add employee field to purchase request tree -->
+        <record id="purchase_request_tree_inherit_portal" model="ir.ui.view">
+            <field name="name">purchase.request.tree.inherit.portal</field>
+            <field name="model">purchase.request</field>
+            <field name="inherit_id" ref="purchase_request.view_purchase_request_tree"/>
+            <field name="arch" type="xml">
+                <!-- Add employee field in tree view -->
+                <field name="requested_by" position="after">
+                    <field name="employee_id" optional="show"/>
+                </field>
+            </field>
+        </record>
+    </data>
+</odoo>

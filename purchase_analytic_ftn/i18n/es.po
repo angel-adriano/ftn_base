@@ -1,0 +1,23 @@
+# purchase_analytic_ftn es.po
+# Copyright (C) 2026 Your Company
+# This file is distributed under the same license as the purchase_analytic_ftn module.
+#
+# Translators: add your name and email here.
+
+msgid ""
+msgstr ""
+"Project-Id-Version: purchase_analytic_ftn 1.0\n"
+"Report-Msgid-Bugs-To: you@example.com\n"
+"POT-Creation-Date: 2026-03-31 00:00+0000\n"
+"PO-Revision-Date: 2026-03-31 00:00+0000\n"
+"Last-Translator: Your Name <you@example.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Odoo 19\n"
+
+# Ejemplo de traducción
+#msgid "Purchase Analytic Report"
+#msgstr "Informe Analítico de Compras"
